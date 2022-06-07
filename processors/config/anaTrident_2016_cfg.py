@@ -3,15 +3,15 @@ import sys
 import os
 import baseConfig
 
-(options,args) = baseConfig.parser.parse_args()
+options = baseConfig.parser.parse_args()
 
 
 # Use the input file to set the output file name
 infile = options.inFilename
 outfile = options.outFilename
 
-print 'Input file: %s' % infile
-print 'Output file: %s' % outfile
+print('Input file: %s' % infile)
+print('Output file: %s' % outfile)
 
 p = HpstrConf.Process()
 
@@ -50,13 +50,13 @@ CalTimeOffset=-999
 
 if (options.isData==1):
     CalTimeOffset=56.
-    print "Running on data file: Setting CalTimeOffset %d"  % CalTimeOffset
+    print("Running on data file: Setting CalTimeOffset %d"  % CalTimeOffset)
     
 elif (options.isData==0):
     CalTimeOffset=43.
-    print "Running on MC file: Setting CalTimeOffset %d"  % CalTimeOffset
+    print("Running on MC file: Setting CalTimeOffset %d"  % CalTimeOffset)
 else:
-    print "Specify which type of ntuple you are running on: -t 1 [for Data] / -t 0 [for MC]"
+    print("Specify which type of ntuple you are running on: -t 1 [for Data] / -t 0 [for MC]")
 
 
 vtxana.parameters["CalTimeOffset"]=CalTimeOffset

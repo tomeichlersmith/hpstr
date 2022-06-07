@@ -68,11 +68,6 @@ void MCAnaProcessor::initialize(TTree* tree) {
 
 bool MCAnaProcessor::process(IEvent* ievent) {
   double weight=1.0;
-  histos->FillMCParticles(mcParts_);
-  histos->FillMCTrackerHits(mcTrkrHits_);
-  histos->FillMCEcalHits(mcEcalHits_);
-  
-  
   MCParticle* eleRad=NULL;
   MCParticle* eleRec=NULL;
   MCParticle* pos=NULL;
