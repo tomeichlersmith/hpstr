@@ -5,14 +5,6 @@ import baseConfig
 
 options = baseConfig.parser.parse_args()
 
-
-# Use the input file to set the output file name
-infile = options.inFilename
-outfile = options.outFilename
-
-print('Input file: %s' % infile)
-print('Output file: %s' % outfile)
-
 p = HpstrConf.Process()
 
 p.run_mode = 1
@@ -25,7 +17,7 @@ p.add_library("libprocessors")
 #          Processors         #
 ###############################
 
-vtxana = HpstrConf.Processor('vtxana', 'TridentAnaProcessorRedoParticles')
+vtxana = HpstrConf.Processor('vtxana', 'TridentAnaProcessor')
 
 ###############################
 #   Processor Configuration   #
@@ -83,9 +75,10 @@ vtxana.parameters["regionWABDefinitions"]=[RegionPath+'/wabL1ElectronCluster.jso
 # Sequence which the processors will run.
 p.sequence = [vtxana]
 
-p.input_files=[infile]
-p.output_files = [outfile]
+p.input_files = options.inFilename
+p.output_files = [options.outFilename]
+
+print(p.input_files)
 
 p.printProcess()
-
 
