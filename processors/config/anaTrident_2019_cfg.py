@@ -25,7 +25,7 @@ p.add_library("libprocessors")
 #          Processors         #
 ###############################
 
-vtxana = HpstrConf.Processor('vtxana', 'TridentAnaProcessorRedoParticles')
+vtxana = HpstrConf.Processor('vtxana', 'TridentAnaProcessor')
 
 ###############################
 #   Processor Configuration   #
