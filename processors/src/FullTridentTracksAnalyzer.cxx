@@ -7,20 +7,17 @@
 #include "HpsEvent.h"
 #include "Collections.h"
 #include "EventHeader.h"
-#include "Vertex.h"
 #include "Track.h"
-#include "TrackerHit.h"
 #include "Particle.h"
 #include "Processor.h"
 #include "BaseSelector.h"
 #include "TrackHistos.h"
-#include "FlatTupleMaker.h"
 #include "AnaHelpers.h"
 
 #include "TFile.h"
 #include "TTree.h"
-#include "TBranch.h"
 #include "TVector3.h"
+#include "Math/Vector4D.h"
 
 #include <memory>
 #include <iostream>
@@ -28,18 +25,13 @@
 
 class FullTridentTracksAnalyzer : public Processor {
   std::shared_ptr<BaseSelector> event_selector_;
-  std::shared_ptr<HistoManager> histos_;
+  std::shared_ptr<TrackHistos> histos_;
   std::string selection_cfg_, histo_cfg_;
 
   std::vector<Particle*>* particles_{};
   std::string particle_coll_{"FinalStateParticles"};
 
-  std::vector<Vertex*> * vtxs_{};
-  std::vector<Track*>  * trks_{};
   EventHeader* evth_{nullptr};
-  std::string vtxColl_{"Vertices"};
-  std::string trkColl_{"GBLTracks"};
-  TTree* tree_{nullptr};
 
   double timeOffset_{-999};
   //In GeV. Default is 2016 value;
@@ -73,21 +65,20 @@ void FullTridentTracksAnalyzer::configure(const ParameterSet& parameters) {
 }
 
 void FullTridentTracksAnalyzer::initialize(TTree* tree) {
-  tree_ = tree;
   _ah =  std::make_shared<AnaHelpers>();
   
   event_selector_ = std::make_shared<BaseSelector>("event_selection", selection_cfg_);
   event_selector_->setDebug(debug_);
   event_selector_->LoadSelection();
       
-  histos_ = std::make_shared<HistoManager>("event_selection");
+  histos_ = std::make_shared<TrackHistos>("full_trident");
+  histos_->debugMode(debug_>0);
   histos_->loadHistoConfig(histo_cfg_);
-  histos_->DefineHistos();
+  histos_->DefineHistos({"no_p_sum_cut","p_sum_cut"},"");
   
   //init Reading Tree
-  tree_->SetBranchAddress(vtxColl_.c_str(), &vtxs_);
-  tree_->SetBranchAddress("EventHeader",&evth_);
-  tree_->SetBranchAddress(particle_coll_.c_str(), &particles_);
+  tree->SetBranchAddress("EventHeader",&evth_);
+  tree->SetBranchAddress(particle_coll_.c_str(), &particles_);
 }
 
 bool FullTridentTracksAnalyzer::process(IEvent* ievent) { 
@@ -95,29 +86,66 @@ bool FullTridentTracksAnalyzer::process(IEvent* ievent) {
   double weight = 1.;
   event_selector_->getCutFlowHisto()->Fill(0.,weight);
 
-  int n_electrons{0}, n_positrons{0};
+  ROOT::Math::PxPyPzEVector total_4momentum{};
+  std::vector<ROOT::Math::PxPyPzEVector> electron_4momenta, positron_4momenta;
+  std::vector<Particle*> electrons, positrons;
   /// IF BRANCH NOT SET CORRECTLY, THIS WILL SEG VIO
   for (Particle* p : *particles_) {
+    auto mom{p->getTrack().getMomentum()};
     if (p->getPDG() == 11) {
-      n_electrons++;
+      electrons.push_back(p);
+      electron_4momenta.emplace_back(mom.at(0), mom.at(1), mom.at(2), p->getEnergy());
+      total_4momentum += electron_4momenta.back();
     } else if (p->getPDG() == -11) {
-      n_positrons++;
+      positrons.push_back(p);
+      positron_4momenta.emplace_back(mom.at(0), mom.at(1), mom.at(2), p->getEnergy());
+      total_4momentum += positron_4momenta.back();
     }
   }
 
-  if (not event_selector_->passCutEq("one_positron", n_positrons, weight)) {
+  if (not event_selector_->passCutEq("one_positron", positrons.size(), weight)) {
     return true;
   }
 
-  if (not event_selector_->passCutEq("two_electrons", n_electrons, weight)) {
+  Particle* positron = positrons.at(0);
+
+  if (not event_selector_->passCutEq("two_electrons", electrons.size(), weight)) {
     return true;
   }
 
-  for (Particle* p : *particles_) {
-    if (abs(p->getPDG()) != 11) continue;
-    histos_->Fill1DHisto("all_elepos_d0_h", p->getTrack().getD0(), weight);
+  auto positron_trk{positron->getTrack()};
+  histos_->Fill1DTrack(&positron_trk, weight, "no_p_sum_cut_positron_");
+  histos_->Fill2DTrack(&positron_trk, weight, "no_p_sum_cut_positron_");
+
+  for (Particle* p : electrons) {
+    auto trk{p->getTrack()};
+    histos_->Fill1DTrack(&trk, weight,"no_p_sum_cut_electrons_");
+    histos_->Fill2DTrack(&trk, weight,"no_p_sum_cut_electrons_");
   }
-    
+
+  histos_->Fill1DHisto("no_p_sum_cut_Psum_h", total_4momentum.P(), weight);
+  histos_->Fill1DHisto("no_p_sum_cut_cluster_Esum_h", total_4momentum.E(), weight);
+
+  if (not event_selector_->passCutLt("max_p_sum", total_4momentum.P(), weight)) {
+    return true;
+  }
+
+  if (not event_selector_->passCutGt("min_p_sum", total_4momentum.P(), weight)) {
+    return true;
+  }
+
+  histos_->Fill1DTrack(&positron_trk, weight, "p_sum_cut_positron_");
+  histos_->Fill2DTrack(&positron_trk, weight, "p_sum_cut_positron_");
+
+  for (Particle* p : electrons) {
+    auto trk{p->getTrack()};
+    histos_->Fill1DTrack(&trk, weight,"p_sum_cut_electrons_");
+    histos_->Fill2DTrack(&trk, weight,"p_sum_cut_electrons_");
+  }
+
+  histos_->Fill1DHisto("p_sum_cut_Psum_h", total_4momentum.P(), weight);
+  histos_->Fill1DHisto("p_sum_cut_cluster_Esum_h", total_4momentum.E(), weight);
+  
   return true;
 }
 
