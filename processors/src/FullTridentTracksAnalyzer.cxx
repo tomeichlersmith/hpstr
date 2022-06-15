@@ -31,6 +31,9 @@ class FullTridentTracksAnalyzer : public Processor {
   std::vector<Particle*>* particles_{};
   std::string particle_coll_{"FinalStateParticles"};
 
+  std::vector<CalCluster*>* clusters_{};
+  std::string cluster_coll_{"RecoEcalClusters"};
+
   EventHeader* evth_{nullptr};
 
   double timeOffset_{-999};
@@ -58,6 +61,8 @@ void FullTridentTracksAnalyzer::configure(const ParameterSet& parameters) {
   debug_   = parameters.getInteger("debug");
   selection_cfg_   = parameters.getString("event_selection");
   histo_cfg_ = parameters.getString("histo_cfg");
+  cluster_coll_ = parameters.getString("cluster_coll", cluster_coll_);
+  particle_coll_ = parameters.getString("particle_coll", particle_coll_);
 
   timeOffset_ = parameters.getDouble("CalTimeOffset");
   beamE_  = parameters.getDouble("beamE");
@@ -79,12 +84,26 @@ void FullTridentTracksAnalyzer::initialize(TTree* tree) {
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
   tree->SetBranchAddress(particle_coll_.c_str(), &particles_);
+  tree->SetBranchAddress(cluster_coll_.c_str(), &clusters_);
 }
 
 bool FullTridentTracksAnalyzer::process(IEvent* ievent) { 
   /// not sure how to acquire a weight from the event header, so leaving this
   double weight = 1.;
   event_selector_->getCutFlowHisto()->Fill(0.,weight);
+
+  std::vector<CalCluster*> electron_clusters, positron_clusters;
+  /// IF BRANCH NOT SET CORRECTLY, THIS WILL SEG VIO
+  for (CalCluster* c : *clusters_) {
+    if (c->getEnergy() < 0.1 or c->getEnergy() > beamE_*1.2) continue;
+    if (c->getX() < 0) {
+      electron_clusters.push_back(c);
+    } else if (c->getX() > 100) {
+      positron_clusters.push_back(c);
+    }
+  }
+
+  // make sure at least 1 positron and 2 electrons
 
   ROOT::Math::PxPyPzEVector total_4momentum{};
   std::vector<ROOT::Math::PxPyPzEVector> electron_4momenta, positron_4momenta;
