@@ -1,5 +1,5 @@
 /** 
- * @file FullTridentTrackAnalyzer.cxx
+ * @file ThreeProngTridentTrackAnalyzer.cxx
  * @author Tom Eichlersmith, UMN updated to 2022 hpstr
  */
 
@@ -23,7 +23,7 @@
 #include <iostream>
 #include <utility> 
 
-class FullTridentTracksAnalyzer : public Processor {
+class ThreeProngTridentTracksAnalyzer : public Processor {
   std::shared_ptr<BaseSelector> event_selector_, cluster_selector_;
   std::shared_ptr<TrackHistos> histos_;
 
@@ -43,20 +43,20 @@ class FullTridentTracksAnalyzer : public Processor {
   //Debug level
   int debug_{0};
  public:
-  FullTridentTracksAnalyzer(const std::string& name, Process& process);
-  ~FullTridentTracksAnalyzer();
+  ThreeProngTridentTracksAnalyzer(const std::string& name, Process& process);
+  ~ThreeProngTridentTracksAnalyzer();
   virtual void configure(const ParameterSet& parameters) final override;
   virtual void initialize(TTree* tree) final override;
   virtual bool process(IEvent* ievent) final override;
   virtual void finalize() final override;
 };
 
-FullTridentTracksAnalyzer::FullTridentTracksAnalyzer(const std::string& name, Process& process) 
+ThreeProngTridentTracksAnalyzer::ThreeProngTridentTracksAnalyzer(const std::string& name, Process& process) 
   : Processor(name,process) {}
 
-FullTridentTracksAnalyzer::~FullTridentTracksAnalyzer(){}
+ThreeProngTridentTracksAnalyzer::~ThreeProngTridentTracksAnalyzer(){}
 
-void FullTridentTracksAnalyzer::configure(const ParameterSet& parameters) {
+void ThreeProngTridentTracksAnalyzer::configure(const ParameterSet& parameters) {
   debug_   = parameters.getInteger("debug");
 
   event_selector_ = std::make_shared<BaseSelector>("event_selection", 
@@ -79,7 +79,7 @@ void FullTridentTracksAnalyzer::configure(const ParameterSet& parameters) {
   isData_ = parameters.getInteger("isData", isData_);
 }
 
-void FullTridentTracksAnalyzer::initialize(TTree* tree) {
+void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
   _ah =  std::make_shared<AnaHelpers>();
   event_selector_->LoadSelection();
   cluster_selector_->LoadSelection();
@@ -91,7 +91,7 @@ void FullTridentTracksAnalyzer::initialize(TTree* tree) {
   tree->SetBranchAddress(cluster_coll_.c_str(), &clusters_);
 }
 
-bool FullTridentTracksAnalyzer::process(IEvent* ievent) { 
+bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) { 
   /// not sure how to acquire a weight from the event header, so leaving this
   double weight = 1.;
   event_selector_->getCutFlowHisto()->Fill(0.,weight);
@@ -197,7 +197,7 @@ bool FullTridentTracksAnalyzer::process(IEvent* ievent) {
   return true;
 }
 
-void FullTridentTracksAnalyzer::finalize() {
+void ThreeProngTridentTracksAnalyzer::finalize() {
   //TODO clean this up a little.
   outF_->cd();
   histos_->saveHistos(outF_,histos_->getName());
@@ -207,4 +207,4 @@ void FullTridentTracksAnalyzer::finalize() {
   outF_->Close();
 }
 
-DECLARE_PROCESSOR(FullTridentTracksAnalyzer);
+DECLARE_PROCESSOR(ThreeProngTridentTracksAnalyzer);

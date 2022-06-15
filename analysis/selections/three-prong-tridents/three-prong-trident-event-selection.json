@@ -1,0 +1,27 @@
+{ 
+    "at_least_one_positron" : {
+        "cut"  : 1,
+        "id"   : 0,
+        "info" : "N_{e^{+}}>=1"
+    },	
+    "at_least_two_electrons" : {
+        "cut"  : 2,
+        "id"   : 1,
+        "info" : "N_{e^{-}}>=2"
+    },
+    "max_cluster_time_diff" : {
+        "cut"  : 2.0,
+        "id"   : 2,
+        "info" : "Three highest energy clusters within 2ns of each other"
+    },
+    "min_p_sum" : {
+      "cut" : 2.1,
+      "id" : 2,
+      "info" : "Psum > 2.1GeV"
+    },
+    "max_p_sum" : {
+      "cut" : 2.5,
+      "id" : 3,
+      "info" : "Psum < 2.5GeV"
+    }
+}
