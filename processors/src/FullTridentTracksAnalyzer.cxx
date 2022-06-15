@@ -24,9 +24,8 @@
 #include <utility> 
 
 class FullTridentTracksAnalyzer : public Processor {
-  std::shared_ptr<BaseSelector> event_selector_;
+  std::shared_ptr<BaseSelector> event_selector_, cluster_selector_;
   std::shared_ptr<TrackHistos> histos_;
-  std::string selection_cfg_, histo_cfg_;
 
   std::vector<Particle*>* particles_{};
   std::string particle_coll_{"FinalStateParticles"};
@@ -39,7 +38,7 @@ class FullTridentTracksAnalyzer : public Processor {
   double timeOffset_{-999};
   //In GeV. Default is 2016 value;
   double beamE_{2.3};
-  int isData{0};
+  int isData_{0};
   std::shared_ptr<AnaHelpers> _ah;
   //Debug level
   int debug_{0};
@@ -59,26 +58,31 @@ FullTridentTracksAnalyzer::~FullTridentTracksAnalyzer(){}
 
 void FullTridentTracksAnalyzer::configure(const ParameterSet& parameters) {
   debug_   = parameters.getInteger("debug");
-  selection_cfg_   = parameters.getString("event_selection");
-  histo_cfg_ = parameters.getString("histo_cfg");
+
+  event_selector_ = std::make_shared<BaseSelector>("event_selection", 
+      parameters.getString("event_selection"));
+  event_selector_->setDebug(debug_);
+      
+  cluster_selector_ = std::make_shared<BaseSelector>("cluster_selection", 
+      parameters.getString("cluster_selection"));
+  cluster_selector_->setDebug(debug_);
+      
+  histos_ = std::make_shared<TrackHistos>("full_trident");
+  histos_->debugMode(debug_>0);
+  histos_->loadHistoConfig(parameters.getString("histo_cfg"));
+  
   cluster_coll_ = parameters.getString("cluster_coll", cluster_coll_);
   particle_coll_ = parameters.getString("particle_coll", particle_coll_);
 
   timeOffset_ = parameters.getDouble("CalTimeOffset");
-  beamE_  = parameters.getDouble("beamE");
-  isData  = parameters.getInteger("isData");
+  beamE_  = parameters.getDouble("beamE", beamE_);
+  isData_ = parameters.getInteger("isData", isData_);
 }
 
 void FullTridentTracksAnalyzer::initialize(TTree* tree) {
   _ah =  std::make_shared<AnaHelpers>();
-  
-  event_selector_ = std::make_shared<BaseSelector>("event_selection", selection_cfg_);
-  event_selector_->setDebug(debug_);
   event_selector_->LoadSelection();
-      
-  histos_ = std::make_shared<TrackHistos>("full_trident");
-  histos_->debugMode(debug_>0);
-  histos_->loadHistoConfig(histo_cfg_);
+  cluster_selector_->LoadSelection();
   histos_->DefineHistos({"no_p_sum_cut","p_sum_cut"},"");
   
   //init Reading Tree
@@ -95,43 +99,69 @@ bool FullTridentTracksAnalyzer::process(IEvent* ievent) {
   std::vector<CalCluster*> electron_clusters, positron_clusters;
   /// IF BRANCH NOT SET CORRECTLY, THIS WILL SEG VIO
   for (CalCluster* c : *clusters_) {
-    if (c->getEnergy() < 0.1 or c->getEnergy() > beamE_*1.2) continue;
-    if (c->getX() < 0) {
+    cluster_selector_->getCutFlowHisto()->Fill(0.);
+    if (not cluster_selector_->passCutLt("max_energy_frac", c->getEnergy()/beamE_)) continue;
+    if (not cluster_selector_->passCutGt("min_energy", c->getEnergy())) continue;
+    if (cluster_selector_->passCutLt("electron_max_x", c->getX())) {
       electron_clusters.push_back(c);
-    } else if (c->getX() > 100) {
+    } else if (cluster_selector_->passCutGt("positron_min_x", c->getX())) {
       positron_clusters.push_back(c);
     }
   }
 
   // make sure at least 1 positron and 2 electrons
+  if (not event_selector_->passCutGt("at_least_one_positron", positron_clusters.size(), weight))
+    return true;
 
-  ROOT::Math::PxPyPzEVector total_4momentum{};
-  std::vector<ROOT::Math::PxPyPzEVector> electron_4momenta, positron_4momenta;
-  std::vector<Particle*> electrons, positrons;
-  /// IF BRANCH NOT SET CORRECTLY, THIS WILL SEG VIO
-  for (Particle* p : *particles_) {
-    auto mom{p->getTrack().getMomentum()};
-    if (p->getPDG() == 11) {
-      electrons.push_back(p);
-      electron_4momenta.emplace_back(mom.at(0), mom.at(1), mom.at(2), p->getEnergy());
-      total_4momentum += electron_4momenta.back();
-    } else if (p->getPDG() == -11) {
-      positrons.push_back(p);
-      positron_4momenta.emplace_back(mom.at(0), mom.at(1), mom.at(2), p->getEnergy());
-      total_4momentum += positron_4momenta.back();
+  if (not event_selector_->passCutGt("at_least_two_electrons", electron_clusters.size(), weight))
+    return true;
+
+  // use greater-than here so that the earlier indices in the vector get assigned
+  // the larger energy clusters
+  static auto energy_sort = [](const CalCluster* lhs, const CalCluster* rhs) {
+    return lhs->getEnergy() > rhs->getEnergy();
+  };
+
+  std::sort(positron_clusters.begin(), positron_clusters.end(), energy_sort);
+  std::sort(electron_clusters.begin(), electron_clusters.end(), energy_sort);
+
+  /**
+   * Call the highest energy positron candidate cluster the positron
+   * and the two highest energy electron candidate clusters the electrons
+   *
+   * WARN: This is where we assume that the vectors are at least the correct size.
+   */
+  CalCluster* positron{positron_clusters.at(0)}, 
+              electron0{electron_clusters.at(0)}, 
+              electron1{electron_clusters.at(1)};
+
+  /**
+   * Deduce maximum time difference between any pair within the three clusters
+   * we are focusing on.
+   */
+  double max_time_diff{0.};
+  std::vector<CalCluster*> clusters_of_importance{positron, electron0, electron1};
+  for (std::size_t i{0}; i < 3; i++) {
+    for (std::size_t j{i}; j < 3; j++) {
+      double time_diff{abs(
+           clusters_of_importance.at(i)->getTime()
+          -clusters_of_importance.at(j)->getTime()
+          )};
+      if (time_diff > max_time_diff) max_time_diff = time_diff;
     }
   }
 
-  if (not event_selector_->passCutEq("one_positron", positrons.size(), weight)) {
+  if (not event_selector_->passCutLt("max_cluster_time_diff", max_time_diff, weight))
     return true;
+
+  double cluster_E_sum{0.};
+  for (CalCluster* c : clusters_of_importance) {
+    cluster_E_sum += c->getEnergy();
   }
 
-  Particle* positron = positrons.at(0);
+  histos_->Fill1DHisto("cluster_E_sum_h", cluster_E_sum, weight);
 
-  if (not event_selector_->passCutEq("two_electrons", electrons.size(), weight)) {
-    return true;
-  }
-
+  /*
   auto positron_trk{positron->getTrack()};
   histos_->Fill1DTrack(&positron_trk, weight, "no_p_sum_cut_positron_");
   histos_->Fill2DTrack(&positron_trk, weight, "no_p_sum_cut_positron_");
@@ -143,7 +173,6 @@ bool FullTridentTracksAnalyzer::process(IEvent* ievent) {
   }
 
   histos_->Fill1DHisto("no_p_sum_cut_Psum_h", total_4momentum.P(), weight);
-  histos_->Fill1DHisto("no_p_sum_cut_cluster_Esum_h", total_4momentum.E(), weight);
 
   if (not event_selector_->passCutLt("max_p_sum", total_4momentum.P(), weight)) {
     return true;
@@ -163,7 +192,7 @@ bool FullTridentTracksAnalyzer::process(IEvent* ievent) {
   }
 
   histos_->Fill1DHisto("p_sum_cut_Psum_h", total_4momentum.P(), weight);
-  histos_->Fill1DHisto("p_sum_cut_cluster_Esum_h", total_4momentum.E(), weight);
+  */
   
   return true;
 }
@@ -174,6 +203,7 @@ void FullTridentTracksAnalyzer::finalize() {
   histos_->saveHistos(outF_,histos_->getName());
   outF_->cd(histos_->getName().c_str());
   event_selector_->getCutFlowHisto()->Write();
+  cluster_selector_->getCutFlowHisto()->Write();
   outF_->Close();
 }
 
