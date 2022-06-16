@@ -1,6 +1,10 @@
 /** 
  * @file ThreeProngTridentTrackAnalyzer.cxx
  * @author Tom Eichlersmith, UMN updated to 2022 hpstr
+ *
+ * This analysis requires a few different reconstructed objects in order to function properly.
+ *  - RecoEcalClusters
+ *  - RecoEcalHits : not explicitly listed but needed to load the seed hit of the ecal clusters
  */
 
 //HPSTR
@@ -13,6 +17,7 @@
 #include "BaseSelector.h"
 #include "TrackHistos.h"
 #include "AnaHelpers.h"
+#include "CalHit.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -22,6 +27,7 @@
 #include <memory>
 #include <iostream>
 #include <utility> 
+#include <exception>
 
 class ThreeProngTridentTracksAnalyzer : public Processor {
   std::shared_ptr<BaseSelector> event_selector_, cluster_selector_;
@@ -32,6 +38,9 @@ class ThreeProngTridentTracksAnalyzer : public Processor {
 
   std::vector<CalCluster*>* clusters_{};
   std::string cluster_coll_{"RecoEcalClusters"};
+
+  std::vector<CalHit*>* cal_hits_{};
+  std::string calhit_coll_{"RecoEcalHits"};
 
   EventHeader* evth_{nullptr};
 
@@ -67,11 +76,12 @@ void ThreeProngTridentTracksAnalyzer::configure(const ParameterSet& parameters) 
       parameters.getString("cluster_selection"));
   cluster_selector_->setDebug(debug_);
       
-  histos_ = std::make_shared<TrackHistos>("full_trident");
+  histos_ = std::make_shared<TrackHistos>("tpt");
   histos_->debugMode(debug_>0);
   histos_->loadHistoConfig(parameters.getString("histo_cfg"));
   
   cluster_coll_ = parameters.getString("cluster_coll", cluster_coll_);
+  calhit_coll_ = parameters.getString("calhit_coll", calhit_coll_);
   particle_coll_ = parameters.getString("particle_coll", particle_coll_);
 
   timeOffset_ = parameters.getDouble("CalTimeOffset");
@@ -83,7 +93,7 @@ void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
   _ah =  std::make_shared<AnaHelpers>();
   event_selector_->LoadSelection();
   cluster_selector_->LoadSelection();
-  histos_->DefineHistos({"no_p_sum_cut","p_sum_cut"},"");
+  histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","final_selection"},"");
   
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
@@ -100,11 +110,12 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
   /// IF BRANCH NOT SET CORRECTLY, THIS WILL SEG VIO
   for (CalCluster* c : *clusters_) {
     cluster_selector_->getCutFlowHisto()->Fill(0.);
-    if (not cluster_selector_->passCutLt("max_energy_frac", c->getEnergy()/beamE_)) continue;
-    if (not cluster_selector_->passCutGt("min_energy", c->getEnergy())) continue;
-    if (cluster_selector_->passCutLt("electron_max_x", c->getX())) {
+    if (not cluster_selector_->passCutLt("max_energy_frac", c->getEnergy()/beamE_,1)) continue;
+    if (not cluster_selector_->passCutGt("min_energy", c->getEnergy(),1)) continue;
+    double x{c->getPosition().at(0)};
+    if (cluster_selector_->passCutLt("electron_max_x", x,1)) {
       electron_clusters.push_back(c);
-    } else if (cluster_selector_->passCutGt("positron_min_x", c->getX())) {
+    } else if (cluster_selector_->passCutGt("positron_min_x", x,1)) {
       positron_clusters.push_back(c);
     }
   }
@@ -132,66 +143,94 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
    * WARN: This is where we assume that the vectors are at least the correct size.
    */
   CalCluster* positron{positron_clusters.at(0)}, 
-              electron0{electron_clusters.at(0)}, 
-              electron1{electron_clusters.at(1)};
+            * electron0{electron_clusters.at(0)}, 
+            * electron1{electron_clusters.at(1)};
 
   /**
-   * Deduce maximum time difference between any pair within the three clusters
-   * we are focusing on.
+   * Calculate meta-variables of the three trident clusters
+   *
+   * max_time_diff - maximum abs difference in time between any pair within the three clusters
+   * cluster_E_sum - total energy from three clusters
+   * cluster_on_edge - count of clusters that are seeded on the edge of the ECal, "fiducial" clusters
    */
   double max_time_diff{0.};
+  double cluster_E_sum{0.};
+  int clusters_on_edge{0};
   std::vector<CalCluster*> clusters_of_importance{positron, electron0, electron1};
   for (std::size_t i{0}; i < 3; i++) {
+    CalCluster* c{clusters_of_importance.at(i)};
+    // energy
+    cluster_E_sum += c->getEnergy();
+
+    // fiducial
+    auto seed = dynamic_cast<CalHit*>(c->getSeed());
+    if (not seed) {
+      throw std::runtime_error("Cluster Seed Hit not in ROOT file. RecEcalHits need to be in tuple file.");
+    }
+    std::vector<int> indices{seed->getCrystalIndices()};
+    int x{indices.at(0)}, y{indices.at(1)};
+    // left or right outer edge
+    if (abs(x) == 23) ++clusters_on_edge;
+    // top or bottom outer edge
+    else if (abs(y) == 5) ++ clusters_on_edge;
+    // middle gap outside cutout
+    else if (abs(y) == 1 and (x > -2 or x < -10)) ++clusters_on_edge;
+    // middle gap inside cutout
+    else if (abs(y) == 2 and (x < -1 and x > -11)) ++clusters_on_edge;
+
+    // time difference
     for (std::size_t j{i}; j < 3; j++) {
-      double time_diff{abs(
-           clusters_of_importance.at(i)->getTime()
+      double time_diff{abs(c->getTime()
           -clusters_of_importance.at(j)->getTime()
           )};
       if (time_diff > max_time_diff) max_time_diff = time_diff;
     }
   }
 
+  static auto fill = [&](const std::string& name) {
+    for (CalCluster* c : clusters_of_importance) {
+      auto seed = dynamic_cast<CalHit*>(c->getSeed());
+      if (not seed) {
+        throw std::runtime_error("Cluster Seed Hit not in ROOT file. RecEcalHits need to be in tuple file.");
+      }
+      std::vector<int> indices{seed->getCrystalIndices()};
+      int x{indices.at(0)}, y{indices.at(1)};
+      histos_->Fill2DHisto(name+"_cluster_seed_pos_hh",x,y);
+    }
+
+    histos_->Fill1DHisto(name+"_max_time_diff_h", max_time_diff, weight);
+    histos_->Fill1DHisto(name+"_clusters_on_edge_h", clusters_on_edge, weight);
+    histos_->Fill2DHisto(name+"_max_time_diff_vs_E_sum_hh", max_time_diff, cluster_E_sum, weight);
+    histos_->Fill1DHisto(name+"_cluster_E_sum_h", cluster_E_sum, weight);
+    histos_->Fill1DHisto(name+"_electron0_cluster_E_h", electron0->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_electron1_cluster_E_h", electron1->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_positron_cluster_E_h", positron->getEnergy(), weight);
+  };
+
+  fill("pre_time_cut");
+
   if (not event_selector_->passCutLt("max_cluster_time_diff", max_time_diff, weight))
     return true;
 
-  double cluster_E_sum{0.};
-  for (CalCluster* c : clusters_of_importance) {
-    cluster_E_sum += c->getEnergy();
-  }
+  fill("pre_fiducial_cut");
 
-  histos_->Fill1DHisto("cluster_E_sum_h", cluster_E_sum, weight);
-
-  /*
-  auto positron_trk{positron->getTrack()};
-  histos_->Fill1DTrack(&positron_trk, weight, "no_p_sum_cut_positron_");
-  histos_->Fill2DTrack(&positron_trk, weight, "no_p_sum_cut_positron_");
-
-  for (Particle* p : electrons) {
-    auto trk{p->getTrack()};
-    histos_->Fill1DTrack(&trk, weight,"no_p_sum_cut_electrons_");
-    histos_->Fill2DTrack(&trk, weight,"no_p_sum_cut_electrons_");
-  }
-
-  histos_->Fill1DHisto("no_p_sum_cut_Psum_h", total_4momentum.P(), weight);
-
-  if (not event_selector_->passCutLt("max_p_sum", total_4momentum.P(), weight)) {
+  if (not event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight)) 
     return true;
-  }
 
-  if (not event_selector_->passCutGt("min_p_sum", total_4momentum.P(), weight)) {
-    return true;
-  }
+  fill("final_selection");
 
-  histos_->Fill1DTrack(&positron_trk, weight, "p_sum_cut_positron_");
-  histos_->Fill2DTrack(&positron_trk, weight, "p_sum_cut_positron_");
-
-  for (Particle* p : electrons) {
-    auto trk{p->getTrack()};
-    histos_->Fill1DTrack(&trk, weight,"p_sum_cut_electrons_");
-    histos_->Fill2DTrack(&trk, weight,"p_sum_cut_electrons_");
-  }
-
-  histos_->Fill1DHisto("p_sum_cut_Psum_h", total_4momentum.P(), weight);
+  /**
+   * Track Distributions
+   *
+   * Now that we have selected events that are candidate three prong tridents,
+   * we can get the matching tracks and fill up some histograms of their parameters.
+   *
+  histos_->Fill1DTrack(&positron_trk, weight, "positron_");
+  histos_->Fill2DTrack(&positron_trk, weight, "positron_");
+  histos_->Fill1DTrack(&electron0_trk, weight, "electron0_");
+  histos_->Fill2DTrack(&electron0_trk, weight, "electron0_");
+  histos_->Fill1DTrack(&electron1_trk, weight, "electron1_");
+  histos_->Fill2DTrack(&electron1_trk, weight, "electron1_");
   */
   
   return true;

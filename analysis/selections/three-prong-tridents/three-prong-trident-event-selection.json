@@ -14,14 +14,9 @@
         "id"   : 2,
         "info" : "Three highest energy clusters within 2ns of each other"
     },
-    "min_p_sum" : {
-      "cut" : 2.1,
-      "id" : 2,
-      "info" : "Psum > 2.1GeV"
-    },
-    "max_p_sum" : {
-      "cut" : 2.5,
-      "id" : 3,
-      "info" : "Psum < 2.5GeV"
+    "no_edge_clusters" : {
+        "cut"  : 0,
+        "id"   : 3,
+        "info" : "None of the three clusters on on the edge"
     }
 }
