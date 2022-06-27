@@ -650,5 +650,26 @@
         "maxX" : 3.0,
         "xtitle" : "e+ Cluster [GeV]",
         "ytitle" : "Event Count"
+    },
+    "electron0_track_N_h" : {
+       "bins" : 2,
+       "minX" : -0.5,
+       "maxX" : 1.5,
+       "xtitle" : "N electron0 tracks",
+       "ytitle" : "events"
+    },
+    "electron1_track_N_h" : {
+       "bins" : 2,
+       "minX" : -0.5,
+       "maxX" : 1.5,
+       "xtitle" : "N electron1 tracks",
+       "ytitle" : "events"
+    },
+    "positron_track_N_h" : {
+       "bins" : 2,
+       "minX" : -0.5,
+       "maxX" : 1.5,
+       "xtitle" : "N positron tracks",
+       "ytitle" : "events"
     }
 }

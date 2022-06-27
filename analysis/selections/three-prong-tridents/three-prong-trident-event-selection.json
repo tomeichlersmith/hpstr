@@ -18,5 +18,15 @@
         "cut"  : 0,
         "id"   : 3,
         "info" : "None of the three clusters on on the edge"
+    },
+    "min_positron_with_track" : {
+        "cut"  : 1,
+        "id"   : 4,
+        "info" : "Positron cluster has a matched track"
+    },
+    "min_clusters_with_track" : {
+        "cut"  : 3,
+        "id"   : 4,
+        "info" : "All three clusters have a matched track"
     }
 }

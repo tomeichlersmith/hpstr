@@ -3,8 +3,9 @@
  * @author Tom Eichlersmith, UMN updated to 2022 hpstr
  *
  * This analysis requires a few different reconstructed objects in order to function properly.
- *  - RecoEcalClusters
+ *  - RecoEcalClusters : needed for doing cuts on clusters and candidate trident clusters
  *  - RecoEcalHits : not explicitly listed but needed to load the seed hit of the ecal clusters
+ *  - FinalStateParticles : needed for checking if clusters having a matching track
  */
 
 //HPSTR
@@ -146,6 +147,14 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
             * electron0{electron_clusters.at(0)}, 
             * electron1{electron_clusters.at(1)};
 
+  static auto extract_seed_indices = [](const CalCluster* cluster) {
+    auto seed = dynamic_cast<CalHit*>(cluster->getSeed());
+    if (not seed) {
+      throw std::runtime_error("Cluster seed hit not in ROOT file. RecEcalHits need to be in tuple file.");
+    }
+    return seed->getCrystalIndices();
+  };
+
   /**
    * Calculate meta-variables of the three trident clusters
    *
@@ -156,18 +165,14 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
   double max_time_diff{0.};
   double cluster_E_sum{0.};
   int clusters_on_edge{0};
-  std::vector<CalCluster*> clusters_of_importance{positron, electron0, electron1};
+  std::vector<CalCluster*> trident_clusters{positron, electron0, electron1};
   for (std::size_t i{0}; i < 3; i++) {
-    CalCluster* c{clusters_of_importance.at(i)};
+    CalCluster* c{trident_clusters.at(i)};
     // energy
     cluster_E_sum += c->getEnergy();
 
     // fiducial
-    auto seed = dynamic_cast<CalHit*>(c->getSeed());
-    if (not seed) {
-      throw std::runtime_error("Cluster Seed Hit not in ROOT file. RecEcalHits need to be in tuple file.");
-    }
-    std::vector<int> indices{seed->getCrystalIndices()};
+    std::vector<int> indices{extract_seed_indices(c)};
     int x{indices.at(0)}, y{indices.at(1)};
     // left or right outer edge
     if (abs(x) == 23) ++clusters_on_edge;
@@ -181,19 +186,15 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     // time difference
     for (std::size_t j{i}; j < 3; j++) {
       double time_diff{abs(c->getTime()
-          -clusters_of_importance.at(j)->getTime()
+          -trident_clusters.at(j)->getTime()
           )};
       if (time_diff > max_time_diff) max_time_diff = time_diff;
     }
   }
 
   static auto fill = [&](const std::string& name) {
-    for (CalCluster* c : clusters_of_importance) {
-      auto seed = dynamic_cast<CalHit*>(c->getSeed());
-      if (not seed) {
-        throw std::runtime_error("Cluster Seed Hit not in ROOT file. RecEcalHits need to be in tuple file.");
-      }
-      std::vector<int> indices{seed->getCrystalIndices()};
+    for (CalCluster* c : trident_clusters) {
+      std::vector<int> indices{extract_seed_indices(c)};
       int x{indices.at(0)}, y{indices.at(1)};
       histos_->Fill2DHisto(name+"_cluster_seed_pos_hh",x,y);
     }
@@ -219,12 +220,69 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
 
   fill("final_selection");
 
+  static auto close_enough = [](const std::vector<double>& a, const std::vector<double>& b) {
+    static const double max_sep = 1.; // mm ??
+    for (std::size_t i{0}; i < a.size(); i++)
+      if (abs(a.at(i) - b.at(i)) > max_sep) return false;
+    return true;
+  };
+
+  /**
+   * Get matching tracks for the clusters now that we have a final selection
+   *
+   * We determine matching clusters by looking through the particle collection until
+   * a cluster with the same seed is found. The track stored by that particle is then used
+   * for track studying.
+   */
+  std::vector<double> positron_pos{positron->getPosition()},
+                      electron0_pos{electron0->getPosition()},
+                      electron1_pos{electron1->getPosition()};
+  int positron_trkid{-1},
+      electron0_trkid{-1},
+      electron1_trkid{-1};
+  for (Particle* p : *particles_) {
+    std::vector<double> particle_cluster_pos{p->getCluster().getPosition()};
+    if (close_enough(positron_pos , particle_cluster_pos)) 
+      positron_trkid  = p->getTrack().getID();
+    else if (close_enough(electron0_pos, particle_cluster_pos)) 
+      electron0_trkid = p->getTrack().getID();
+    else if (close_enough(electron1_pos, particle_cluster_pos)) 
+      electron1_trkid = p->getTrack().getID();
+  }
+
+  histos_->Fill1DHisto("final_selection_electron0_track_N_h", int(electron0_trkid > 0), weight);
+  histos_->Fill1DHisto("final_selection_electron1_track_N_h", int(electron1_trkid > 0), weight);
+  histos_->Fill1DHisto("final_selection_positron_track_N_h", int(positron_trkid > 0), weight);
+
+  int num_clusters_with_track{0};
+  if (positron_trkid > 0) num_clusters_with_track++;
+
+  if (not event_selector_->passCutGt("min_positron_with_track", num_clusters_with_track, weight))
+    return true;
+
+  if (electron0_trkid > 0) num_clusters_with_track++;
+  if (electron1_trkid > 0) num_clusters_with_track++;
+
+  if (not event_selector_->passCutGt("min_clusters_with_track", num_clusters_with_track, weight))
+    return true;
+
   /**
    * Track Distributions
    *
    * Now that we have selected events that are candidate three prong tridents,
    * we can get the matching tracks and fill up some histograms of their parameters.
    *
+  static auto deduce_track[&](const int& trkid) {
+    if (trkid < 0) return nullptr;
+    trk_it = std::find_if(tracks_->begin(), tracks_->end(), 
+        [trkid](const Track* t) { return t->getID() == trkid; });
+    if (trk_it == tracks_->end()) return nullptr;
+    return *trk_it;
+  }
+
+  Track *positron_trk{deduce_track(positron_trkid)},
+        *electron0_trk{deduce_track(electron0_trkid)},
+        *electron1_trk{deduce_track(electron1_trkid)};
   histos_->Fill1DTrack(&positron_trk, weight, "positron_");
   histos_->Fill2DTrack(&positron_trk, weight, "positron_");
   histos_->Fill1DTrack(&electron0_trk, weight, "electron0_");
