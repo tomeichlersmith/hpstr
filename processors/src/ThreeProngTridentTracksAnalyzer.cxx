@@ -6,6 +6,10 @@
  *  - RecoEcalClusters : needed for doing cuts on clusters and candidate trident clusters
  *  - RecoEcalHits : not explicitly listed but needed to load the seed hit of the ecal clusters
  *  - FinalStateParticles : needed for checking if clusters having a matching track
+ *  - KallmanFullTracks : needed for looking at tracks in detail after the cluster selection
+ *
+ * This analysis requires an update written by Cam copying a unique ID for each cluster in LCIO
+ * into the ROOT tuples. This makes finding the FSP for a specific cluster much easier.
  */
 
 //HPSTR
@@ -40,8 +44,8 @@ class ThreeProngTridentTracksAnalyzer : public Processor {
   std::vector<CalCluster*>* clusters_{};
   std::string cluster_coll_{"RecoEcalClusters"};
 
-  std::vector<CalHit*>* cal_hits_{};
-  std::string calhit_coll_{"RecoEcalHits"};
+  std::vector<Track*>* tracks_{};
+  std::string track_coll_{"KallmanFullTracks"};
 
   EventHeader* evth_{nullptr};
 
@@ -49,7 +53,6 @@ class ThreeProngTridentTracksAnalyzer : public Processor {
   //In GeV. Default is 2016 value;
   double beamE_{2.3};
   int isData_{0};
-  std::shared_ptr<AnaHelpers> _ah;
   //Debug level
   int debug_{0};
  public:
@@ -84,6 +87,7 @@ void ThreeProngTridentTracksAnalyzer::configure(const ParameterSet& parameters) 
   cluster_coll_ = parameters.getString("cluster_coll", cluster_coll_);
   calhit_coll_ = parameters.getString("calhit_coll", calhit_coll_);
   particle_coll_ = parameters.getString("particle_coll", particle_coll_);
+  track_coll_ = parameters.getString("track_coll", track_coll_);
 
   timeOffset_ = parameters.getDouble("CalTimeOffset");
   beamE_  = parameters.getDouble("beamE", beamE_);
@@ -91,7 +95,6 @@ void ThreeProngTridentTracksAnalyzer::configure(const ParameterSet& parameters) 
 }
 
 void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
-  _ah =  std::make_shared<AnaHelpers>();
   event_selector_->LoadSelection();
   cluster_selector_->LoadSelection();
   histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","final_selection"},"");
@@ -100,6 +103,7 @@ void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
   tree->SetBranchAddress("EventHeader",&evth_);
   tree->SetBranchAddress(particle_coll_.c_str(), &particles_);
   tree->SetBranchAddress(cluster_coll_.c_str(), &clusters_);
+  tree->SetBranchAddress(track_coll_.c_str(), &tracks_);
 }
 
 bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) { 
@@ -220,33 +224,21 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
 
   fill("final_selection");
 
-  static auto close_enough = [](const std::vector<double>& a, const std::vector<double>& b) {
-    static const double max_sep = 1.; // mm ??
-    for (std::size_t i{0}; i < a.size(); i++)
-      if (abs(a.at(i) - b.at(i)) > max_sep) return false;
-    return true;
-  };
-
   /**
    * Get matching tracks for the clusters now that we have a final selection
    *
    * We determine matching clusters by looking through the particle collection until
-   * a cluster with the same seed is found. The track stored by that particle is then used
+   * a cluster with the same ID is found. The track stored by that particle is then used
    * for track studying.
    */
-  std::vector<double> positron_pos{positron->getPosition()},
-                      electron0_pos{electron0->getPosition()},
-                      electron1_pos{electron1->getPosition()};
-  int positron_trkid{-1},
-      electron0_trkid{-1},
-      electron1_trkid{-1};
+  int positron_trkid{-1}, electron0_trkid{-1}, electron1_trkid{-1};
   for (Particle* p : *particles_) {
-    std::vector<double> particle_cluster_pos{p->getCluster().getPosition()};
-    if (close_enough(positron_pos , particle_cluster_pos)) 
+    int id{p->getCluster().getID()};
+    if (id == positron->getID())
       positron_trkid  = p->getTrack().getID();
-    else if (close_enough(electron0_pos, particle_cluster_pos)) 
+    else if (id == electron0->getID())
       electron0_trkid = p->getTrack().getID();
-    else if (close_enough(electron1_pos, particle_cluster_pos)) 
+    else if (id == electron1->getID())
       electron1_trkid = p->getTrack().getID();
   }
 
@@ -271,25 +263,25 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
    *
    * Now that we have selected events that are candidate three prong tridents,
    * we can get the matching tracks and fill up some histograms of their parameters.
-   *
-  static auto deduce_track[&](const int& trkid) {
-    if (trkid < 0) return nullptr;
-    trk_it = std::find_if(tracks_->begin(), tracks_->end(), 
+   */
+  static auto fill_track_histos = [&](const int& trkid, const std::string& name) {
+    // silent leave if track wasn't found from its cluster
+    if (trkid < 0) return;
+    // look for ID in track collection
+    auto trk_it = std::find_if(tracks_->begin(), tracks_->end(), 
         [trkid](const Track* t) { return t->getID() == trkid; });
-    if (trk_it == tracks_->end()) return nullptr;
-    return *trk_it;
-  }
+    // loud exit if ID found in particles isn't in track collection
+    if (trk_it == tracks_->end()) {
+      throw std::runtime_error("Unable to pull "+name+"'s track with id "+std::to_string(trkid));
+    }
+    // de-reference iterator to pass into function
+    histos_->Fill1DTrack(*trk_it, weight, "final_selection_"+name+"_");
+    histos_->Fill2DTrack(*trk_it, weight, "final_selection_"+name+"_");
+  };
 
-  Track *positron_trk{deduce_track(positron_trkid)},
-        *electron0_trk{deduce_track(electron0_trkid)},
-        *electron1_trk{deduce_track(electron1_trkid)};
-  histos_->Fill1DTrack(&positron_trk, weight, "positron_");
-  histos_->Fill2DTrack(&positron_trk, weight, "positron_");
-  histos_->Fill1DTrack(&electron0_trk, weight, "electron0_");
-  histos_->Fill2DTrack(&electron0_trk, weight, "electron0_");
-  histos_->Fill1DTrack(&electron1_trk, weight, "electron1_");
-  histos_->Fill2DTrack(&electron1_trk, weight, "electron1_");
-  */
+  fill_track_histos(positron_trkid, "positron");
+  fill_track_histos(electron0_trkid, "electron0");
+  fill_track_histos(electron1_trkid, "electron1");
   
   return true;
 }
