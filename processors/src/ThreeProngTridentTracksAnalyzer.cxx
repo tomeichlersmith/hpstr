@@ -6,7 +6,7 @@
  *  - RecoEcalClusters : needed for doing cuts on clusters and candidate trident clusters
  *  - RecoEcalHits : not explicitly listed but needed to load the seed hit of the ecal clusters
  *  - FinalStateParticles : needed for checking if clusters having a matching track
- *  - KallmanFullTracks : needed for looking at tracks in detail after the cluster selection
+ *  - KalmanFullTracks : needed for looking at tracks in detail after the cluster selection
  *
  * This analysis requires an update written by Cam copying a unique ID for each cluster in LCIO
  * into the ROOT tuples. This makes finding the FSP for a specific cluster much easier.
@@ -45,7 +45,7 @@ class ThreeProngTridentTracksAnalyzer : public Processor {
   std::string cluster_coll_{"RecoEcalClusters"};
 
   std::vector<Track*>* tracks_{};
-  std::string track_coll_{"KallmanFullTracks"};
+  std::string track_coll_{"KalmanFullTracks"};
 
   EventHeader* evth_{nullptr};
 
@@ -85,7 +85,6 @@ void ThreeProngTridentTracksAnalyzer::configure(const ParameterSet& parameters) 
   histos_->loadHistoConfig(parameters.getString("histo_cfg"));
   
   cluster_coll_ = parameters.getString("cluster_coll", cluster_coll_);
-  calhit_coll_ = parameters.getString("calhit_coll", calhit_coll_);
   particle_coll_ = parameters.getString("particle_coll", particle_coll_);
   track_coll_ = parameters.getString("track_coll", track_coll_);
 
@@ -231,29 +230,29 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
    * a cluster with the same ID is found. The track stored by that particle is then used
    * for track studying.
    */
-  int positron_trkid{-1}, electron0_trkid{-1}, electron1_trkid{-1};
+  Track positron_trk, electron0_trk, electron1_trk;
   for (Particle* p : *particles_) {
     int id{p->getCluster().getID()};
     if (id == positron->getID())
-      positron_trkid  = p->getTrack().getID();
+      positron_trk = p->getTrack();
     else if (id == electron0->getID())
-      electron0_trkid = p->getTrack().getID();
+      electron0_trk = p->getTrack();
     else if (id == electron1->getID())
-      electron1_trkid = p->getTrack().getID();
+      electron1_trk = p->getTrack();
   }
 
-  histos_->Fill1DHisto("final_selection_electron0_track_N_h", int(electron0_trkid > 0), weight);
-  histos_->Fill1DHisto("final_selection_electron1_track_N_h", int(electron1_trkid > 0), weight);
-  histos_->Fill1DHisto("final_selection_positron_track_N_h", int(positron_trkid > 0), weight);
+  histos_->Fill1DHisto("final_selection_electron0_track_N_h", int(electron0_trk.getID() > 0), weight);
+  histos_->Fill1DHisto("final_selection_electron1_track_N_h", int(electron1_trk.getID() > 0), weight);
+  histos_->Fill1DHisto("final_selection_positron_track_N_h", int(positron_trk.getID() > 0), weight);
 
   int num_clusters_with_track{0};
-  if (positron_trkid > 0) num_clusters_with_track++;
+  if (positron_trk.getID() > 0) num_clusters_with_track++;
 
   if (not event_selector_->passCutGt("min_positron_with_track", num_clusters_with_track, weight))
     return true;
 
-  if (electron0_trkid > 0) num_clusters_with_track++;
-  if (electron1_trkid > 0) num_clusters_with_track++;
+  if (electron0_trk.getID() > 0) num_clusters_with_track++;
+  if (electron1_trk.getID() > 0) num_clusters_with_track++;
 
   if (not event_selector_->passCutGt("min_clusters_with_track", num_clusters_with_track, weight))
     return true;
@@ -264,24 +263,17 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
    * Now that we have selected events that are candidate three prong tridents,
    * we can get the matching tracks and fill up some histograms of their parameters.
    */
-  static auto fill_track_histos = [&](const int& trkid, const std::string& name) {
+  static auto fill_track_histos = [&](Track& trk, const std::string& name) {
     // silent leave if track wasn't found from its cluster
-    if (trkid < 0) return;
-    // look for ID in track collection
-    auto trk_it = std::find_if(tracks_->begin(), tracks_->end(), 
-        [trkid](const Track* t) { return t->getID() == trkid; });
-    // loud exit if ID found in particles isn't in track collection
-    if (trk_it == tracks_->end()) {
-      throw std::runtime_error("Unable to pull "+name+"'s track with id "+std::to_string(trkid));
-    }
+    if (trk.getID() < 0) return;
     // de-reference iterator to pass into function
-    histos_->Fill1DTrack(*trk_it, weight, "final_selection_"+name+"_");
-    histos_->Fill2DTrack(*trk_it, weight, "final_selection_"+name+"_");
+    histos_->Fill1DTrack(&trk, weight, "final_selection_"+name+"_");
+    histos_->Fill2DTrack(&trk, weight, "final_selection_"+name+"_");
   };
 
-  fill_track_histos(positron_trkid, "positron");
-  fill_track_histos(electron0_trkid, "electron0");
-  fill_track_histos(electron1_trkid, "electron1");
+  fill_track_histos(positron_trk, "positron");
+  fill_track_histos(electron0_trk, "electron0");
+  fill_track_histos(electron1_trk, "electron1");
   
   return true;
 }
