@@ -202,6 +202,8 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
       histos_->Fill2DHisto(name+"_cluster_seed_pos_hh",x,y);
     }
 
+    histos_->Fill1DHisto(name+"_n_positron_candidates_h", positron_clusters.size(), weight);
+    histos_->Fill1DHisto(name+"_n_electron_candidates_h", electron_clusters.size(), weight);
     histos_->Fill1DHisto(name+"_max_time_diff_h", max_time_diff, weight);
     histos_->Fill1DHisto(name+"_clusters_on_edge_h", clusters_on_edge, weight);
     histos_->Fill2DHisto(name+"_max_time_diff_vs_E_sum_hh", max_time_diff, cluster_E_sum, weight);
@@ -241,9 +243,12 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
       electron1_trk = p->getTrack();
   }
 
-  histos_->Fill1DHisto("final_selection_electron0_track_N_h", int(electron0_trk.getID() > 0), weight);
-  histos_->Fill1DHisto("final_selection_electron1_track_N_h", int(electron1_trk.getID() > 0), weight);
-  histos_->Fill1DHisto("final_selection_positron_track_N_h", int(positron_trk.getID() > 0), weight);
+  histos_->Fill1DHisto("final_selection_electron0_track_N_h", 
+      int(electron0_trk.getID() > 0), weight);
+  histos_->Fill1DHisto("final_selection_electron1_track_N_h", 
+      int(electron1_trk.getID() > 0), weight);
+  histos_->Fill1DHisto("final_selection_positron_track_N_h", 
+      int(positron_trk.getID() > 0), weight);
 
   int num_clusters_with_track{0};
   if (positron_trk.getID() > 0) num_clusters_with_track++;

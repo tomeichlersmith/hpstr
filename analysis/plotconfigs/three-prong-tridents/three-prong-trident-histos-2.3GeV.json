@@ -623,6 +623,20 @@
       "xtitle" : "Cluster Seed X Index",
       "ytitle" : "Cluster Seed Y Index"
     },
+    "n_positron_candidates_h" : {
+      "bins" : 5,
+      "minX" : 0.5,
+      "maxX" : 5.5,
+      "xtitle" : "N e+ candidates",
+      "ytitle" : "Events"
+    },
+    "n_electron_candidates_h" : {
+      "bins" : 10,
+      "minX" : 0.5,
+      "maxX" : 10.5,
+      "xtitle" : "N e- candidates",
+      "ytitle" : "Events"
+    },
     "cluster_E_sum_h" : {
         "bins" : 100,
         "minX" : 1.0,
