@@ -11,32 +11,32 @@
     },
     "max_positron_candidates" : {
         "cut"  : 1,
-        "id"   : 0,
+        "id"   : 2,
         "info" : "N_{e^{+}}<=1"
     },	
     "max_electron_candidates" : {
         "cut"  : 2,
-        "id"   : 1,
+        "id"   : 3,
         "info" : "N_{e^{-}}<=2"
     },
     "max_cluster_time_diff" : {
         "cut"  : 2.0,
-        "id"   : 2,
+        "id"   : 4,
         "info" : "Three highest energy clusters within 2ns of each other"
     },
     "no_edge_clusters" : {
         "cut"  : 0,
-        "id"   : 3,
+        "id"   : 5,
         "info" : "None of the three clusters on on the edge"
     },
     "min_positron_with_track" : {
         "cut"  : 1,
-        "id"   : 4,
+        "id"   : 6,
         "info" : "Positron cluster has a matched track"
     },
     "min_clusters_with_track" : {
         "cut"  : 3,
-        "id"   : 4,
+        "id"   : 7,
         "info" : "All three clusters have a matched track"
     }
 }
