@@ -667,12 +667,33 @@
       "xtitle" : "N e- candidates",
       "ytitle" : "Events"
     },
+
     "electron0_track_N_h" : {
        "bins" : 2,
        "minX" : -0.5,
        "maxX" : 1.5,
        "xtitle" : "N electron0 tracks",
        "ytitle" : "events"
+    },
+    "electron0_matched_x_y_hh" : {
+      "binsX" : 100,
+      "minX" : -100,
+      "maxX" : 100,
+      "binsY" : 100,
+      "minY" : -100,
+      "maxY" : 100,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Y [mm]"
+    },
+    "electron0_unmatched_x_y_hh" : {
+      "binsX" : 100,
+      "minX" : -100,
+      "maxX" : 100,
+      "binsY" : 100,
+      "minY" : -100,
+      "maxY" : 100,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Y [mm]"
     },
     "electron1_track_N_h" : {
        "bins" : 2,

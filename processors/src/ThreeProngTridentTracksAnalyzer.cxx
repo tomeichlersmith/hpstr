@@ -257,12 +257,21 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
       electron1_trk = p->getTrack();
   }
 
-  histos_->Fill1DHisto("electron0_track_N_h", 
-      int(electron0_trk.getID() > 0), weight);
-  histos_->Fill1DHisto("electron1_track_N_h", 
-      int(electron1_trk.getID() > 0), weight);
-  histos_->Fill1DHisto("positron_track_N_h", 
-      int(positron_trk.getID() > 0), weight);
+  static auto fill_trk_match_histos = [&](const std::string& name, 
+      bool successful_match, CalCluster* c) {
+    histos_->Fill1DHisto(name+"_track_N_h", int(successful_match), weight);
+    if (successful_match) {
+      histos_->Fill2DHisto(name+"_matched_x_y_hh",
+          c->getPosition().at(0), c->getPosition().at(1), weight);
+    } else {
+      histos_->Fill2DHisto(name+"_unmatched_x_y_hh",
+          c->getPosition().at(0), c->getPosition().at(1), weight);
+    }
+  };
+
+  fill_trk_match_histos("electron0", electron0_trk.getID() > 0, electron0);
+  fill_trk_match_histos("electron1", electron1_trk.getID() > 0, electron1);
+  fill_trk_match_histos("positron", positron_trk.getID() > 0, positron);
 
   int num_clusters_with_track{0};
   if (positron_trk.getID() > 0) num_clusters_with_track++;
