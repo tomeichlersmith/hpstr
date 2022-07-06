@@ -1,8 +1,8 @@
 { 
     "max_energy_frac" : {
-        "cut"  : 1.2,
+        "cut"  : 0.87,
         "id"   : 0,
-        "info" : "E_{cluster}/E_{beam} < 1.2"
+        "info" : "E_{cluster}/E_{beam} < 0.87"
     },
     "min_energy" : {
         "cut" : 0.1,
