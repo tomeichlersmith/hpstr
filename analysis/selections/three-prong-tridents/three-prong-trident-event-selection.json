@@ -1,13 +1,23 @@
 { 
-    "at_least_one_positron" : {
+    "min_positron_candidates" : {
         "cut"  : 1,
         "id"   : 0,
         "info" : "N_{e^{+}}>=1"
     },	
-    "at_least_two_electrons" : {
+    "min_electron_candidates" : {
         "cut"  : 2,
         "id"   : 1,
         "info" : "N_{e^{-}}>=2"
+    },
+    "max_positron_candidates" : {
+        "cut"  : 1,
+        "id"   : 0,
+        "info" : "N_{e^{+}}<=1"
+    },	
+    "max_electron_candidates" : {
+        "cut"  : 2,
+        "id"   : 1,
+        "info" : "N_{e^{-}}<=2"
     },
     "max_cluster_time_diff" : {
         "cut"  : 2.0,

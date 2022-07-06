@@ -96,7 +96,13 @@ void ThreeProngTridentTracksAnalyzer::configure(const ParameterSet& parameters) 
 void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
   event_selector_->LoadSelection();
   cluster_selector_->LoadSelection();
-  histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","final_selection"},"");
+
+  /**
+   * Histos are defined here - any histograms with the string 'follow'
+   * within their name will have multiple copies created in order to "follow"
+   * the event selections made within this analyzer
+   */
+  histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","final_selection"},"follow");
   
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
@@ -124,11 +130,20 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     }
   }
 
+  histos_->Fill1DHisto("n_positron_candidates_h", positron_clusters.size(), weight);
+  histos_->Fill1DHisto("n_electron_candidates_h", electron_clusters.size(), weight);
+
   // make sure at least 1 positron and 2 electrons
-  if (not event_selector_->passCutGt("at_least_one_positron", positron_clusters.size(), weight))
+  if (not event_selector_->passCutGt("min_positron_candidates", positron_clusters.size(), weight))
     return true;
 
-  if (not event_selector_->passCutGt("at_least_two_electrons", electron_clusters.size(), weight))
+  if (not event_selector_->passCutGt("min_electron_candidates", electron_clusters.size(), weight))
+    return true;
+
+  if (not event_selector_->passCutLt("max_positron_candidates", positron_clusters.size(), weight))
+    return true;
+
+  if (not event_selector_->passCutLt("max_electron_candidates", electron_clusters.size(), weight))
     return true;
 
   // use greater-than here so that the earlier indices in the vector get assigned
@@ -199,18 +214,17 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     for (CalCluster* c : trident_clusters) {
       std::vector<int> indices{extract_seed_indices(c)};
       int x{indices.at(0)}, y{indices.at(1)};
-      histos_->Fill2DHisto(name+"_cluster_seed_pos_hh",x,y);
+      histos_->Fill2DHisto(name+"_follow_cluster_seed_pos_hh",x,y);
     }
 
-    histos_->Fill1DHisto(name+"_n_positron_candidates_h", positron_clusters.size(), weight);
-    histos_->Fill1DHisto(name+"_n_electron_candidates_h", electron_clusters.size(), weight);
-    histos_->Fill1DHisto(name+"_max_time_diff_h", max_time_diff, weight);
-    histos_->Fill1DHisto(name+"_clusters_on_edge_h", clusters_on_edge, weight);
-    histos_->Fill2DHisto(name+"_max_time_diff_vs_E_sum_hh", max_time_diff, cluster_E_sum, weight);
-    histos_->Fill1DHisto(name+"_cluster_E_sum_h", cluster_E_sum, weight);
-    histos_->Fill1DHisto(name+"_electron0_cluster_E_h", electron0->getEnergy(), weight);
-    histos_->Fill1DHisto(name+"_electron1_cluster_E_h", electron1->getEnergy(), weight);
-    histos_->Fill1DHisto(name+"_positron_cluster_E_h", positron->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_follow_max_time_diff_h", max_time_diff, weight);
+    histos_->Fill1DHisto(name+"_follow_clusters_on_edge_h", clusters_on_edge, weight);
+    histos_->Fill2DHisto(name+"_follow_max_time_diff_vs_E_sum_hh", 
+        max_time_diff, cluster_E_sum, weight);
+    histos_->Fill1DHisto(name+"_follow_cluster_E_sum_h", cluster_E_sum, weight);
+    histos_->Fill1DHisto(name+"_follow_electron0_cluster_E_h", electron0->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_follow_electron1_cluster_E_h", electron1->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_follow_positron_cluster_E_h", positron->getEnergy(), weight);
   };
 
   fill("pre_time_cut");
@@ -243,11 +257,11 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
       electron1_trk = p->getTrack();
   }
 
-  histos_->Fill1DHisto("final_selection_electron0_track_N_h", 
+  histos_->Fill1DHisto("electron0_track_N_h", 
       int(electron0_trk.getID() > 0), weight);
-  histos_->Fill1DHisto("final_selection_electron1_track_N_h", 
+  histos_->Fill1DHisto("electron1_track_N_h", 
       int(electron1_trk.getID() > 0), weight);
-  histos_->Fill1DHisto("final_selection_positron_track_N_h", 
+  histos_->Fill1DHisto("positron_track_N_h", 
       int(positron_trk.getID() > 0), weight);
 
   int num_clusters_with_track{0};
@@ -272,8 +286,8 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     // silent leave if track wasn't found from its cluster
     if (trk.getID() < 0) return;
     // de-reference iterator to pass into function
-    histos_->Fill1DTrack(&trk, weight, "final_selection_"+name+"_");
-    histos_->Fill2DTrack(&trk, weight, "final_selection_"+name+"_");
+    histos_->Fill1DTrack(&trk, weight, name+"_");
+    histos_->Fill2DTrack(&trk, weight, name+"_");
   };
 
   fill_track_histos(positron_trk, "positron");

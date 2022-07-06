@@ -589,21 +589,22 @@
         "ytitle" : "trk #phi_{0}"
     },
 
-    "max_time_diff_h" : {
+
+    "follow_max_time_diff_h" : {
       "bins" : 100,
       "minX" : 0.0,
       "maxX" : 10.0,
       "xtitle" : "Max Time Diff [ns] between 2e- and e+ clusters",
       "ytitle" : "events"
     },
-    "clusters_on_edge_h" : {
+    "follow_clusters_on_edge_h" : {
       "bins" : 4,
       "minX" : -0.5,
       "maxX" : 3.5,
       "xtitle" : "Number of Clusters seeded on edge of ECal",
       "ytitle" : "events"
     },
-    "max_time_diff_vs_E_sum_hh" : {
+    "follow_max_time_diff_vs_E_sum_hh" : {
       "binsX"  : 100,
       "minX"   : 0.0,
       "maxX"   : 10.0,
@@ -613,7 +614,7 @@
       "xtitle" : "Max Time Diff [ns]",
       "ytitle" : "Cluster E Sum [GeV]"
     },
-    "cluster_seed_pos_hh" : {
+    "follow_cluster_seed_pos_hh" : {
       "binsX"  : 47,
       "minX"   : -23.5,
       "maxX"   : 23.5,
@@ -623,47 +624,48 @@
       "xtitle" : "Cluster Seed X Index",
       "ytitle" : "Cluster Seed Y Index"
     },
-    "n_positron_candidates_h" : {
-      "bins" : 5,
-      "minX" : 0.5,
-      "maxX" : 5.5,
-      "xtitle" : "N e+ candidates",
-      "ytitle" : "Events"
-    },
-    "n_electron_candidates_h" : {
-      "bins" : 10,
-      "minX" : 0.5,
-      "maxX" : 10.5,
-      "xtitle" : "N e- candidates",
-      "ytitle" : "Events"
-    },
-    "cluster_E_sum_h" : {
+    "follow_cluster_E_sum_h" : {
         "bins" : 100,
         "minX" : 1.0,
         "maxX" : 3.0,
         "xtitle" : "Sum of Three Trident Clusters [GeV]",
         "ytitle" : "Event Count"
     },
-    "electron0_cluster_E_h" : {
+    "follow_electron0_cluster_E_h" : {
         "bins" : 100,
         "minX" : 0.0,
         "maxX" : 3.0,
         "xtitle" : "Highest Energy e- Cluster [GeV]",
         "ytitle" : "Event Count"
     },
-    "electron1_cluster_E_h" : {
+    "follow_electron1_cluster_E_h" : {
         "bins" : 100,
         "minX" : 0.0,
         "maxX" : 3.0,
         "xtitle" : "2nd Highest Energy e- Cluster [GeV]",
         "ytitle" : "Event Count"
     },
-    "positron_cluster_E_h" : {
+    "follow_positron_cluster_E_h" : {
         "bins" : 100,
         "minX" : 0.0,
         "maxX" : 3.0,
         "xtitle" : "e+ Cluster [GeV]",
         "ytitle" : "Event Count"
+    },
+
+    "n_positron_candidates_h" : {
+      "bins" : 6,
+      "minX" : -0.5,
+      "maxX" : 5.5,
+      "xtitle" : "N e+ candidates",
+      "ytitle" : "Events"
+    },
+    "n_electron_candidates_h" : {
+      "bins" : 11,
+      "minX" : -0.5,
+      "maxX" : 10.5,
+      "xtitle" : "N e- candidates",
+      "ytitle" : "Events"
     },
     "electron0_track_N_h" : {
        "bins" : 2,
