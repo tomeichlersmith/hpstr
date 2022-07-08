@@ -677,8 +677,8 @@
     },
     "electron0_matched_x_y_hh" : {
       "binsX" : 100,
-      "minX" : -100,
-      "maxX" : 100,
+      "minX" : -300,
+      "maxX" : 0,
       "binsY" : 100,
       "minY" : -100,
       "maxY" : 100,
@@ -687,8 +687,8 @@
     },
     "electron0_unmatched_x_y_hh" : {
       "binsX" : 100,
-      "minX" : -100,
-      "maxX" : 100,
+      "minX" : -300,
+      "maxX" : 0,
       "binsY" : 100,
       "minY" : -100,
       "maxY" : 100,
@@ -702,11 +702,51 @@
        "xtitle" : "N electron1 tracks",
        "ytitle" : "events"
     },
+    "electron1_matched_x_y_hh" : {
+      "binsX" : 100,
+      "minX" : -300,
+      "maxX" : 0,
+      "binsY" : 100,
+      "minY" : -100,
+      "maxY" : 100,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Y [mm]"
+    },
+    "electron1_unmatched_x_y_hh" : {
+      "binsX" : 100,
+      "minX" : -300,
+      "maxX" : 0,
+      "binsY" : 100,
+      "minY" : -100,
+      "maxY" : 100,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Y [mm]"
+    },
     "positron_track_N_h" : {
        "bins" : 2,
        "minX" : -0.5,
        "maxX" : 1.5,
        "xtitle" : "N positron tracks",
        "ytitle" : "events"
+    },
+    "positron_matched_x_y_hh" : {
+      "binsX" : 100,
+      "minX" : 0,
+      "maxX" : 400,
+      "binsY" : 100,
+      "minY" : -100,
+      "maxY" : 100,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Y [mm]"
+    },
+    "positron_unmatched_x_y_hh" : {
+      "binsX" : 100,
+      "minX" : 0,
+      "maxX" : 400,
+      "binsY" : 100,
+      "minY" : -100,
+      "maxY" : 100,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Y [mm]"
     }
 }
