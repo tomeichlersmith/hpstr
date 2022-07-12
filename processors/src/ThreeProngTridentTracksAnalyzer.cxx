@@ -102,7 +102,7 @@ void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
    * within their name will have multiple copies created in order to "follow"
    * the event selections made within this analyzer
    */
-  histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","final_selection"},"follow");
+  histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","pre_esum_cut","final_selection"},"follow");
   
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
@@ -227,14 +227,20 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     histos_->Fill1DHisto(name+"_follow_positron_cluster_E_h", positron->getEnergy(), weight);
   };
 
+  fill("pre_fiducial_cut");
+
+  if (not event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight)) 
+    return true;
+
   fill("pre_time_cut");
 
   if (not event_selector_->passCutLt("max_cluster_time_diff", max_time_diff, weight))
     return true;
 
-  fill("pre_fiducial_cut");
+  fill("pre_esum_cut");
 
-  if (not event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight)) 
+  if (not event_selector_->passCutLt("max_cluster_E_sum", cluster_E_sum, weight)
+      or not event_selector_->passCutGt("min_cluster_E_sum", cluster_E_sum, weight))
     return true;
 
   fill("final_selection");

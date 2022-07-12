@@ -19,24 +19,34 @@
         "id"   : 3,
         "info" : "N_{e^{-}}<=2"
     },
-    "max_cluster_time_diff" : {
-        "cut"  : 2.0,
-        "id"   : 4,
-        "info" : "Three highest energy clusters within 2ns of each other"
-    },
     "no_edge_clusters" : {
         "cut"  : 0,
-        "id"   : 5,
+        "id"   : 4,
         "info" : "None of the three clusters on on the edge"
+    },
+    "max_cluster_time_diff" : {
+        "cut"  : 2.0,
+        "id"   : 5,
+        "info" : "Three highest energy clusters within 2ns of each other"
+    },
+    "min_cluster_E_sum" : {
+      "cut" : 2.0,
+      "id"  : 6,
+      "info" : "Minimun trident clusters total energy"
+    },
+    "max_cluster_E_sum" : {
+      "cut" : 2.8,
+      "id"  : 7,
+      "info" : "Maximum trident clusters total energy"
     },
     "min_positron_with_track" : {
         "cut"  : 1,
-        "id"   : 6,
+        "id"   : 8,
         "info" : "Positron cluster has a matched track"
     },
     "min_clusters_with_track" : {
         "cut"  : 3,
-        "id"   : 7,
+        "id"   : 9,
         "info" : "All three clusters have a matched track"
     }
 }
