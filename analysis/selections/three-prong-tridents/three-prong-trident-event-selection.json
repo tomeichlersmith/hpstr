@@ -30,12 +30,12 @@
         "info" : "Three highest energy clusters within 2ns of each other"
     },
     "min_cluster_E_sum" : {
-      "cut" : 2.0,
+      "cut" : 2.2,
       "id"  : 6,
       "info" : "Minimun trident clusters total energy"
     },
     "max_cluster_E_sum" : {
-      "cut" : 2.8,
+      "cut" : 2.5,
       "id"  : 7,
       "info" : "Maximum trident clusters total energy"
     },
