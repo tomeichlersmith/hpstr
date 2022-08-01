@@ -590,6 +590,12 @@
     },
 
 
+    "follow_time_diff_hh" : {
+      "binsX" : 100, "minX" : 0.0, "maxX" : 10.0, 
+      "binsY" : 100, "minY" : 0.0, "maxY" : 10.0, 
+      "xtitle" : "pos-ele0 T Diff [ns]",
+      "ytitle" : "ele1-ele0 T Diff [ns]"
+    },
     "follow_max_time_diff_h" : {
       "bins" : 100,
       "minX" : 0.0,

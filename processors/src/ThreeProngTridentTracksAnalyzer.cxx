@@ -217,6 +217,10 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
       histos_->Fill2DHisto(name+"_follow_cluster_seed_pos_hh",x,y);
     }
 
+    histos_->Fill2DHisto(name+"_follow_time_diff_hh",
+        abs(positron->getTime()  - electron0->getTime()),
+        abs(electron1->getTime() - electron0->getTime()));
+
     histos_->Fill1DHisto(name+"_follow_max_time_diff_h", max_time_diff, weight);
     histos_->Fill1DHisto(name+"_follow_clusters_on_edge_h", clusters_on_edge, weight);
     histos_->Fill2DHisto(name+"_follow_max_time_diff_vs_E_sum_hh", 
