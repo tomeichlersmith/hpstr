@@ -102,7 +102,7 @@ void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
    * within their name will have multiple copies created in order to "follow"
    * the event selections made within this analyzer
    */
-  histos_->DefineHistos({"pre_time_cut","pre_fiducial_cut","pre_esum_cut","final_selection"},"follow");
+  histos_->DefineHistos({"pre_fiducial_cut","pre_esum_cut","A","B","C","D"},"follow");
   
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
@@ -210,45 +210,6 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     }
   }
 
-  static auto fill = [&](const std::string& name) {
-    for (CalCluster* c : trident_clusters) {
-      std::vector<int> indices{extract_seed_indices(c)};
-      int x{indices.at(0)}, y{indices.at(1)};
-      histos_->Fill2DHisto(name+"_follow_cluster_seed_pos_hh",x,y);
-    }
-
-    histos_->Fill2DHisto(name+"_follow_time_diff_hh",
-        abs(positron->getTime()  - electron0->getTime()),
-        abs(electron1->getTime() - electron0->getTime()));
-
-    histos_->Fill1DHisto(name+"_follow_max_time_diff_h", max_time_diff, weight);
-    histos_->Fill1DHisto(name+"_follow_clusters_on_edge_h", clusters_on_edge, weight);
-    histos_->Fill2DHisto(name+"_follow_max_time_diff_vs_E_sum_hh", 
-        max_time_diff, cluster_E_sum, weight);
-    histos_->Fill1DHisto(name+"_follow_cluster_E_sum_h", cluster_E_sum, weight);
-    histos_->Fill1DHisto(name+"_follow_electron0_cluster_E_h", electron0->getEnergy(), weight);
-    histos_->Fill1DHisto(name+"_follow_electron1_cluster_E_h", electron1->getEnergy(), weight);
-    histos_->Fill1DHisto(name+"_follow_positron_cluster_E_h", positron->getEnergy(), weight);
-  };
-
-  fill("pre_fiducial_cut");
-
-  if (not event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight)) 
-    return true;
-
-  fill("pre_time_cut");
-
-  if (not event_selector_->passCutLt("max_cluster_time_diff", max_time_diff, weight))
-    return true;
-
-  fill("pre_esum_cut");
-
-  if (not event_selector_->passCutLt("max_cluster_E_sum", cluster_E_sum, weight)
-      or not event_selector_->passCutGt("min_cluster_E_sum", cluster_E_sum, weight))
-    return true;
-
-  fill("final_selection");
-
   /**
    * Get matching tracks for the clusters now that we have a final selection
    *
@@ -279,9 +240,57 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
     }
   };
 
-  fill_trk_match_histos("electron0", electron0_trk.getID() > 0, electron0);
-  fill_trk_match_histos("electron1", electron1_trk.getID() > 0, electron1);
-  fill_trk_match_histos("positron", positron_trk.getID() > 0, positron);
+  static auto fill = [&](const std::string& name) {
+    for (CalCluster* c : trident_clusters) {
+      std::vector<int> indices{extract_seed_indices(c)};
+      int x{indices.at(0)}, y{indices.at(1)};
+      histos_->Fill2DHisto(name+"_follow_cluster_seed_pos_hh",x,y);
+    }
+
+    histos_->Fill2DHisto(name+"_follow_time_diff_hh",
+        abs(positron->getTime()  - electron0->getTime()),
+        abs(electron1->getTime() - electron0->getTime()));
+
+    histos_->Fill1DHisto(name+"_follow_max_time_diff_h", max_time_diff, weight);
+    histos_->Fill1DHisto(name+"_follow_clusters_on_edge_h", clusters_on_edge, weight);
+    histos_->Fill2DHisto(name+"_follow_max_time_diff_vs_E_sum_hh", 
+        max_time_diff, cluster_E_sum, weight);
+    histos_->Fill1DHisto(name+"_follow_cluster_E_sum_h", cluster_E_sum, weight);
+    histos_->Fill1DHisto(name+"_follow_electron0_cluster_E_h", electron0->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_follow_electron1_cluster_E_h", electron1->getEnergy(), weight);
+    histos_->Fill1DHisto(name+"_follow_positron_cluster_E_h", positron->getEnergy(), weight);
+
+    fill_trk_match_histos(name+"_follow_electron0", electron0_trk.getID() > 0, electron0);
+    fill_trk_match_histos(name+"_follow_electron1", electron1_trk.getID() > 0, electron1);
+    fill_trk_match_histos(name+"_follow_positron", positron_trk.getID() > 0, positron);
+  };
+
+  fill("pre_fiducial_cut");
+
+  bool is_fiducial = event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight);
+  if (not is_fiducial) return true;
+
+  fill("pre_esum_cut");
+
+  if (not event_selector_->passCutGt("min_cluster_E_sum", cluster_E_sum, weight))
+    return true;
+
+  bool in_time = event_selector_->passCutLt("max_cluster_time_diff", max_time_diff, weight);
+  bool beam_energy = event_selector_->passCutLt("max_cluster_E_sum", cluster_E_sum, weight);
+
+  if (in_time and beam_energy) {
+    // "Signal" region A
+    fill("A");
+  } else if (in_time and not beam_energy) {
+    // region B
+    fill("B");
+  } else if (not in_time and beam_energy) {
+    // region C
+    fill("C");
+  } else {
+    // region D
+    fill("D");
+  }
 
   int num_clusters_with_track{0};
   if (positron_trk.getID() > 0) num_clusters_with_track++;
