@@ -102,7 +102,8 @@ void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
    * within their name will have multiple copies created in order to "follow"
    * the event selections made within this analyzer
    */
-  histos_->DefineHistos({"pre_fiducial_cut","pre_esum_cut","A","B","C","D"},"follow");
+  histos_->DefineHistos({"pre_fiducial_cut","pre_min_esum_cut",
+      "pos_tag", "el0_tag", "el1_tag"},"follow");
   
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
@@ -251,6 +252,13 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
         abs(positron->getTime()  - electron0->getTime()),
         abs(electron1->getTime() - electron0->getTime()));
 
+    histos_->Fill2DHisto(name+"_follow_el0_time_cluster_E_sum_hh",
+        electron0->getTime(), cluster_E_sum, weight);
+    histos_->Fill2DHisto(name+"_follow_el1_time_cluster_E_sum_hh",
+        electron1->getTime(), cluster_E_sum, weight);
+    histos_->Fill2DHisto(name+"_follow_pos_time_cluster_E_sum_hh",
+        positron->getTime(), cluster_E_sum, weight);
+
     histos_->Fill1DHisto(name+"_follow_max_time_diff_h", max_time_diff, weight);
     histos_->Fill1DHisto(name+"_follow_clusters_on_edge_h", clusters_on_edge, weight);
     histos_->Fill2DHisto(name+"_follow_max_time_diff_vs_E_sum_hh", 
@@ -270,39 +278,16 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
   bool is_fiducial = event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight);
   if (not is_fiducial) return true;
 
-  fill("pre_esum_cut");
+  fill("pre_min_esum_cut");
 
   if (not event_selector_->passCutGt("min_cluster_E_sum", cluster_E_sum, weight))
     return true;
 
-  bool in_time = event_selector_->passCutLt("max_cluster_time_diff", max_time_diff, weight);
-  bool beam_energy = event_selector_->passCutLt("max_cluster_E_sum", cluster_E_sum, weight);
 
-  if (in_time and beam_energy) {
-    // "Signal" region A
-    fill("A");
-  } else if (in_time and not beam_energy) {
-    // region B
-    fill("B");
-  } else if (not in_time and beam_energy) {
-    // region C
-    fill("C");
-  } else {
-    // region D
-    fill("D");
-  }
-
-  int num_clusters_with_track{0};
-  if (positron_trk.getID() > 0) num_clusters_with_track++;
-
-  if (not event_selector_->passCutGt("min_positron_with_track", num_clusters_with_track, weight))
-    return true;
-
-  if (electron0_trk.getID() > 0) num_clusters_with_track++;
-  if (electron1_trk.getID() > 0) num_clusters_with_track++;
-
-  if (not event_selector_->passCutGt("min_clusters_with_track", num_clusters_with_track, weight))
-    return true;
+  // tag
+  if (electron0_trk.getID() > 0) fill("el0_tag");
+  if (electron1_trk.getID() > 0) fill("el1_tag");
+  if ( positron_trk.getID() > 0) fill("pos_tag");
 
   /**
    * Track Distributions
