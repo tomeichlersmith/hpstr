@@ -597,19 +597,19 @@
       "ytitle" : "ele1-ele0 T Diff [ns]"
     },
     "follow_el0_time_cluster_E_sum_hh" : {
-      "binsX" : 200, "minX" : -10.0, "maxX" : 10.0, 
+      "binsX" : 100, "minX" : 0.0, "maxX" : 10.0, 
       "binsY" : 100, "minY" : 1.0, "maxY" : 3.0, 
       "xtitle" : "electron0 Time [ns]",
       "ytitle" : "Cluster E Sum [GeV]"
     },
     "follow_el1_time_cluster_E_sum_hh" : {
-      "binsX" : 200, "minX" : -10.0, "maxX" : 10.0, 
+      "binsX" : 100, "minX" : 0.0, "maxX" : 10.0, 
       "binsY" : 100, "minY" : 1.0, "maxY" : 3.0, 
       "xtitle" : "electron1 Time [ns]",
       "ytitle" : "Cluster E Sum [GeV]"
     },
     "follow_pos_time_cluster_E_sum_hh" : {
-      "binsX" : 200, "minX" : -10.0, "maxX" : 10.0, 
+      "binsX" : 100, "minX" : 0.0, "maxX" : 10.0, 
       "binsY" : 100, "minY" : 1.0, "maxY" : 3.0, 
       "xtitle" : "positron Time [ns]",
       "ytitle" : "Cluster E Sum [GeV]"
