@@ -2,31 +2,31 @@
     "min_positron_candidates" : {
         "cut"  : 1,
         "id"   : 0,
-        "info" : "N_{e^{+}}>=1"
+        "info" : "$N_{e^{+}}>=1$"
     },	
     "min_electron_candidates" : {
         "cut"  : 2,
         "id"   : 1,
-        "info" : "N_{e^{-}}>=2"
+        "info" : "$N_{e^{-}}>=2$"
     },
     "max_positron_candidates" : {
         "cut"  : 1,
         "id"   : 2,
-        "info" : "N_{e^{+}}<=1"
+        "info" : "$N_{e^{+}}<=1$"
     },	
     "max_electron_candidates" : {
         "cut"  : 2,
         "id"   : 3,
-        "info" : "N_{e^{-}}<=2"
+        "info" : "$N_{e^{-}}<=2$"
     },
     "no_edge_clusters" : {
         "cut"  : 0,
         "id"   : 4,
-        "info" : "None of the three clusters on on the edge"
+        "info" : "Fiducial"
     },
     "min_cluster_E_sum" : {
       "cut" : 2.2,
-      "id"  : 6,
-      "info" : "Minimun trident clusters total energy"
+      "id"  : 5,
+      "info" : "Minimun $E_{tot}$"
     }
 }

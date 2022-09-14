@@ -283,7 +283,6 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
   if (not event_selector_->passCutGt("min_cluster_E_sum", cluster_E_sum, weight))
     return true;
 
-
   // tag
   if (electron0_trk.getID() > 0) fill("el0_tag");
   if (electron1_trk.getID() > 0) fill("el1_tag");
