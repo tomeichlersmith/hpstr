@@ -27,6 +27,16 @@
     "min_cluster_E_sum" : {
       "cut" : 2.2,
       "id"  : 5,
-      "info" : "Minimun $E_{tot}$"
+      "info" : "$E_{tot} > 2.2$ GeV"
+    },
+    "max_cluster_E_sum" : {
+      "cut" : 2.5,
+      "id" : 6,
+      "info" : "$E_{tot} < 2.5$ GeV"
+    },
+    "max_time_diff" : {
+      "cut" : 2.0,
+      "id" : 7,
+      "info" : "Max Time Diff < 2 ns"
     }
 }

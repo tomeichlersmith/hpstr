@@ -2,21 +2,21 @@
     "max_energy_frac" : {
         "cut"  : 0.87,
         "id"   : 0,
-        "info" : "E_{cluster}/E_{beam} < 0.87"
+        "info" : "$E_{cluster}/E_{beam} < 0.87$"
     },
     "min_energy" : {
         "cut" : 0.1,
         "id"  : 1,
-        "info" : "E_{cluster} > 0.1GeV"
+        "info" : "$E_{cluster} > 0.1$ GeV"
     },
     "electron_max_x" : {
         "cut" : 0.0,
         "id"  : 2,
-        "info" : "Electron Candidates (x < 0)"
+        "info" : "$e^-$ ($x < 0$ mm)"
     },
     "positron_min_x" : {
         "cut"  : 100.0,
         "id"   : 3,
-        "info" : "Positron Candidates (x > 100)"
+        "info" : "$e^+$ ($x > 100$ mm)"
     }
 }

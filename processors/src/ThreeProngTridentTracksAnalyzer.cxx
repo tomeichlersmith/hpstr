@@ -102,8 +102,11 @@ void ThreeProngTridentTracksAnalyzer::initialize(TTree* tree) {
    * within their name will have multiple copies created in order to "follow"
    * the event selections made within this analyzer
    */
-  histos_->DefineHistos({"pre_fiducial_cut","pre_min_esum_cut",
-      "pos_tag", "el0_tag", "el1_tag"},"follow");
+  histos_->DefineHistos({"pre_fiducial_cut",
+      "pos_tag", "pos_tag_E", "pos_tag_E_time",
+      "el0_tag", "el0_tag_E", "el0_tag_E_time",
+      "el1_tag", "el1_tag_E", "el1_tag_E_time"
+      },"follow");
   
   //init Reading Tree
   tree->SetBranchAddress("EventHeader",&evth_);
@@ -121,9 +124,11 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
   /// IF BRANCH NOT SET CORRECTLY, THIS WILL SEG VIO
   for (CalCluster* c : *clusters_) {
     cluster_selector_->getCutFlowHisto()->Fill(0.);
+    histos_->Fill1DHisto("cluster_energy_h", c->getEnergy(), 1);
     if (not cluster_selector_->passCutLt("max_energy_frac", c->getEnergy()/beamE_,1)) continue;
     if (not cluster_selector_->passCutGt("min_energy", c->getEnergy(),1)) continue;
     double x{c->getPosition().at(0)};
+    histos_->Fill1DHisto("cluster_x_h", x, 1);
     if (cluster_selector_->passCutLt("electron_max_x", x,1)) {
       electron_clusters.push_back(c);
     } else if (cluster_selector_->passCutGt("positron_min_x", x,1)) {
@@ -278,15 +283,44 @@ bool ThreeProngTridentTracksAnalyzer::process(IEvent* ievent) {
   bool is_fiducial = event_selector_->passCutEq("no_edge_clusters", clusters_on_edge, weight);
   if (not is_fiducial) return true;
 
+  /*
   fill("pre_min_esum_cut");
 
   if (not event_selector_->passCutGt("min_cluster_E_sum", cluster_E_sum, weight))
     return true;
+    */
 
   // tag
-  if (electron0_trk.getID() > 0) fill("el0_tag");
-  if (electron1_trk.getID() > 0) fill("el1_tag");
-  if ( positron_trk.getID() > 0) fill("pos_tag");
+  if (electron0_trk.getID() > 0) {
+    fill("el0_tag");
+    if (cluster_E_sum < event_selector_->getCut("max_cluster_E_sum") 
+        and cluster_E_sum > event_selector_->getCut("min_cluster_E_sum")) {
+      fill("el0_tag_E");
+      if (max_time_diff < event_selector_->getCut("max_time_diff")) {
+        fill("el0_tag_E_time");
+      }
+    }
+  }
+  if (electron1_trk.getID() > 0) {
+    fill("el1_tag");
+    if (cluster_E_sum < event_selector_->getCut("max_cluster_E_sum") 
+        and cluster_E_sum > event_selector_->getCut("min_cluster_E_sum")) {
+      fill("el1_tag_E");
+      if (max_time_diff < event_selector_->getCut("max_time_diff")) {
+        fill("el1_tag_E_time");
+      }
+    }
+  }
+  if ( positron_trk.getID() > 0) {
+    fill("pos_tag");
+    if (cluster_E_sum < event_selector_->getCut("max_cluster_E_sum") 
+        and cluster_E_sum > event_selector_->getCut("min_cluster_E_sum")) {
+      fill("pos_tag_E");
+      if (max_time_diff < event_selector_->getCut("max_time_diff")) {
+        fill("pos_tag_E_time");
+      }
+    }
+  }
 
   /**
    * Track Distributions

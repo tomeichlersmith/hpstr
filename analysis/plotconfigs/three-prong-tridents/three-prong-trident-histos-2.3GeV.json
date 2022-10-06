@@ -758,6 +758,20 @@
       "ytitle" : "Y [mm]"
     },
 
+    "cluster_energy_h" : {
+      "bins" : 100,
+      "minX" : 0.0,
+      "maxX" : 3.0,
+      "xtitle" : "Cluster Energy [GeV]",
+      "ytitle" : "Clusters"
+    },
+    "cluster_x_h" : {
+      "bins" : 200,
+      "minX" : -400,
+      "maxX" : 400,
+      "xtitle" : "X [mm]",
+      "ytitle" : "Clusters"
+    },
     "n_positron_candidates_h" : {
       "bins" : 6,
       "minX" : -0.5,
