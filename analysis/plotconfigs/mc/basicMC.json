@@ -46,6 +46,27 @@
         "xtitle" : "Number of Sim Particles",
         "ytitle" : "Events"
     },
+    "numElectrons_h" : {
+        "bins"   : 60,
+        "minX"   : -0.5,
+        "maxX"   : 59.5,
+        "xtitle" : "Number of Sim Electrons",
+        "ytitle" : "Events"
+    },
+    "numPositrons_h" : {
+        "bins"   : 60,
+        "minX"   : -0.5,
+        "maxX"   : 59.5,
+        "xtitle" : "Number of Sim Positrons",
+        "ytitle" : "Events"
+    },
+    "numGammas_h" : {
+        "bins"   : 60,
+        "minX"   : -0.5,
+        "maxX"   : 59.5,
+        "xtitle" : "Number of Sim Gammas",
+        "ytitle" : "Events"
+    },
     "mc622Mass_h" : {
         "bins" : 450,
         "minX" : 0,

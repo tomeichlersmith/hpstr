@@ -52,8 +52,7 @@ void MCAnaHistos::FillMCParticles(std::vector<MCParticle*> *mcParts, std::string
         MCParticle *part = mcParts->at(i);
         int pdg = part->getPDG();
         int momPdg = part->getMomPDG();
-	//	if ( pdg > 600)
-	//  std::cout<<"Found particle with momPDG = "<<momPdg<<" part = " << pdg << " mass " << part->getMass() << std::endl;
+	      //	if ( pdg > 600) std::cout<<"Found particle with momPDG = "<<momPdg<<" part = " << pdg << " mass " << part->getMass() << std::endl;
 
         double energy = part->getEnergy();
         double massMeV = 1000.0*part->getMass();
@@ -100,8 +99,9 @@ void MCAnaHistos::FillMCParticles(std::vector<MCParticle*> *mcParts, std::string
         bool partOfInt = false;
         //	std::cout<<analysis<<std::endl;
         if (analysis == "simps"){
-            if (fabs(pdg) == 11 && momPdg == 622)
-                partOfInt = true;
+          partOfInt = (fabs(pdg) == 11 && momPdg == 622);
+        } else if (analysis == "idm") {
+          partOfInt = (fabs(pdg) == 11 && momPdg == 1023);
         } else {
             if ((momPdg == 623 || momPdg == 622) && (fabs(pdg) == 11))
                 partOfInt = true;
