@@ -1,6 +1,6 @@
 {
     "pos_pxpy_hh" : {
-        "lowPxz" : 100,
+        "lowPxz" : 0,
         "highPxz": 4700,
         "stepPxz": 100,
         "binsX"  : 200,
