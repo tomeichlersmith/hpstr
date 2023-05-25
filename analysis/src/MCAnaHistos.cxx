@@ -197,5 +197,6 @@ void MCAnaHistos::FillMCEcalHits(std::vector<MCEcalHit*> *mcEcalHits, float weig
     {
         MCEcalHit *hit = mcEcalHits->at(i);
         Fill1DHisto("mcEcalHitEnergy_h", hit->getEnergy()*1000.0, weight); // Scaled to MeV
+        Fill2DHisto("mcEcalHitPos_hh", hit->getIX(), hit->getIY(), weight);
     }
 }

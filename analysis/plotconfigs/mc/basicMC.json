@@ -270,6 +270,16 @@
         "xtitle" : "Number of Sim Ecal Hits",
         "ytitle" : "Events"
     },
+    "mcEcalHitPos_hh" : {
+        "binsX"  : 256,
+        "minX"   : -128.5, 
+        "maxX"   : 127.5,
+        "binsY"  : 64,
+        "minY"   : -32.5,
+        "maxY"   : 31.5,
+        "xtitle" : "Ecal Sim Hit iX",
+        "ytitle" : "Ecal Sim Hit iY"
+    },
     "mcEcalHitEnergy_h" : {
         "bins" : 200,
         "minX" : 0,
