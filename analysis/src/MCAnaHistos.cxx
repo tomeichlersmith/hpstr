@@ -116,6 +116,7 @@ void MCAnaHistos::FillMCParticles(std::vector<MCParticle*> *mcParts, std::string
             if (pdg == 11)
             {
                 Fill1DHisto("ele_pxz_h", PperpB, weight);
+                Fill2DHisto("ele_pxpy_hh", part4P.Px(), part4P.Py(), weight);
                 Fill2DHisto("ele_pxpy_" + std::to_string(Pxz) + "_hh", part4P.Px(), part4P.Py(), weight);
                 
                 Fill1DHisto("truthRadElecE_h", energy, weight);
@@ -128,6 +129,7 @@ void MCAnaHistos::FillMCParticles(std::vector<MCParticle*> *mcParts, std::string
             if (pdg == -11)
             {
                 Fill1DHisto("pos_pxz_h", PperpB, weight);
+                Fill2DHisto("pos_pxpy_hh", part4P.Px(), part4P.Py(), weight);
                 Fill2DHisto("pos_pxpy_" + std::to_string(Pxz) + "_hh", part4P.Px(), part4P.Py(), weight);
 
                 Fill1DHisto("truthRadPosE_h", energy, weight);
