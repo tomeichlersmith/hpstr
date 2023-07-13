@@ -88,13 +88,13 @@ class FinalStateParticleProcessor : public Processor {
         /** Containers to hold all TrackerHit objects. */
         //std::vector<TrackerHit*> hits_{}; 
         
-        std::vector<TrackerHit*> hits_{}; 
+        std::vector<TrackerHit> hits_{}; 
         std::string trkhitCollRoot_{"fspOnTrackHits"}; //!< description
         
-        std::vector<RawSvtHit*> rawhits_{};
+        std::vector<RawSvtHit> rawhits_{};
         std::string rawhitCollRoot_{"fspOnTrackRawHits"};
         
-        std::vector<Particle*> fsps_{}; 
+        std::vector<Particle> fsps_{}; 
         std::string fspCollLcio_{"FinalStateParticles"}; //!< description
         std::string fspCollRoot_{"FinalStateParticles"}; //!< description
         std::string kinkRelCollLcio_{"GBLKinkDataRelations"}; //!< description

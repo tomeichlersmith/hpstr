@@ -67,33 +67,10 @@ void TrackingProcessor::initialize(TTree* tree) {
 bool TrackingProcessor::process(IEvent* ievent) {
 
     //Clean up
-    if (tracks_.size() > 0 ) {
-        for (std::vector<Track *>::iterator it = tracks_.begin(); it != tracks_.end(); ++it) {
-            delete *it;
-        }
-        tracks_.clear();
-    }
-    
-    if (hits_.size() > 0) {
-        for (std::vector<TrackerHit *>::iterator it = hits_.begin(); it != hits_.end(); ++it) {
-            delete *it;
-        }
-        hits_.clear();
-    }
-    
-    if (rawhits_.size() > 0) {
-        for (std::vector<RawSvtHit *>::iterator it = rawhits_.begin(); it != rawhits_.end(); ++it) {
-            delete *it;
-        }
-        rawhits_.clear();
-    }
-    
-    if (truthTracks_.size() > 0) {
-        for (std::vector<Track *>::iterator it = truthTracks_.begin(); it != truthTracks_.end(); ++it) {
-            delete *it;
-        }
-        truthTracks_.clear();
-    }
+    tracks_.clear();
+    hits_.clear();
+    rawhits_.clear();
+    truthTracks_.clear();
     
     Event* event = static_cast<Event*> (ievent);
     // Get the collection of 3D hits from the LCIO event. If no such collection 
@@ -169,11 +146,11 @@ bool TrackingProcessor::process(IEvent* ievent) {
         }
 
         // Add a track to the event
-        Track* track = utils::buildTrack(lc_track,gbl_kink_data,track_data);
+        Track track{utils::buildTrack(lc_track,gbl_kink_data,track_data)};
         
         //Override the momentum of the track if the bfield_ > 0
         if (bfield_>0)
-            track->setMomentum(bfield_);
+            track.setMomentum(bfield_);
 	
         // Get the collection of hits associated with a LCIO Track
         EVENT::TrackerHitVec lc_tracker_hits = lc_track->getTrackerHits();
@@ -183,14 +160,14 @@ bool TrackingProcessor::process(IEvent* ievent) {
         //  event and add references to the track
         bool rotateHits = true;
         int hitType = 0;
-        if (track->isKalmanTrack())
+        if (track.isKalmanTrack())
             hitType=1; //SiClusters
         
         for (auto lc_tracker_hit : lc_tracker_hits) {
             
-            TrackerHit* tracker_hit = utils::buildTrackerHit(static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hit),rotateHits,hitType);
+            TrackerHit tracker_hit{utils::buildTrackerHit(static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hit),rotateHits,hitType)};
             
-            std::vector<RawSvtHit*> rawSvthitsOn3d;
+            std::vector<RawSvtHit> rawSvthitsOn3d;
             utils::addRawInfoTo3dHit(tracker_hit,static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hit),
                                      raw_svt_hit_fits,&rawSvthitsOn3d,hitType);
             
@@ -200,9 +177,9 @@ bool TrackingProcessor::process(IEvent* ievent) {
             rawSvthitsOn3d.clear();
 
             if (debug_)
-                std::cout<<tracker_hit->getRawHits().GetEntries()<<std::endl;
+                std::cout<<tracker_hit.getRawHits().GetEntries()<<std::endl;
             // Add a reference to the hit
-            track->addHit(tracker_hit);
+            track.addHit(&tracker_hit);
             hits_.push_back(tracker_hit);
             
             //Get shared Hits information
@@ -211,27 +188,27 @@ bool TrackingProcessor::process(IEvent* ievent) {
                 EVENT::Track* j_lc_track = static_cast<EVENT::Track*>(tracks->getElementAt(jtrack));
                 if (utils::isUsedByTrack(tracker_hit,j_lc_track)) {
                     //The hit is not already in the shared list
-                    if (std::find(SharedHits[itrack].begin(), SharedHits[itrack].end(),tracker_hit->getID()) == SharedHits[itrack].end()) {
-                        SharedHits[itrack].push_back(tracker_hit->getID());
-                        if (tracker_hit->getLayer() == 0 )
+                    if (std::find(SharedHits[itrack].begin(), SharedHits[itrack].end(),tracker_hit.getID()) == SharedHits[itrack].end()) {
+                        SharedHits[itrack].push_back(tracker_hit.getID());
+                        if (tracker_hit.getLayer() == 0 )
                             SharedHitsLy0[itrack] = true;
-                        if (tracker_hit->getLayer() == 1 ) 
+                        if (tracker_hit.getLayer() == 1 ) 
                             SharedHitsLy1[itrack] = true;
                     }
-                    if (std::find(SharedHits[jtrack].begin(), SharedHits[jtrack].end(),tracker_hit->getID()) == SharedHits[jtrack].end()) {
-                        SharedHits[jtrack].push_back(tracker_hit->getID());
-                        if (tracker_hit->getLayer() == 0 ) 
+                    if (std::find(SharedHits[jtrack].begin(), SharedHits[jtrack].end(),tracker_hit.getID()) == SharedHits[jtrack].end()) {
+                        SharedHits[jtrack].push_back(tracker_hit.getID());
+                        if (tracker_hit.getLayer() == 0 ) 
                             SharedHitsLy0[jtrack] = true;
-                        if (tracker_hit->getLayer() == 1 ) 
+                        if (tracker_hit.getLayer() == 1 ) 
                             SharedHitsLy1[jtrack] = true;
                     }
                 } // found shared hit
             } // loop on j>i tracks
         }//tracker hits
         
-        track->setNShared(SharedHits[itrack].size());
-        track->setSharedLy0(SharedHitsLy0[itrack]);
-        track->setSharedLy1(SharedHitsLy1[itrack]);
+        track.setNShared(SharedHits[itrack].size());
+        track.setSharedLy0(SharedHitsLy0[itrack]);
+        track.setSharedLy1(SharedHitsLy1[itrack]);
         
 
         //Get the truth tracks relations:
@@ -263,13 +240,13 @@ bool TrackingProcessor::process(IEvent* ievent) {
             }
             else {
                 EVENT::Track* lc_truth_track = static_cast<EVENT::Track*> (lc_truth_tracks.at(0));
-                Track* truth_track = utils::buildTrack(lc_truth_track,nullptr,nullptr);
-                track->setTruthLink(truth_track);
+                Track truth_track{utils::buildTrack(lc_truth_track,nullptr,nullptr)};
+                track.setTruthLink(&truth_track);
                 if (bfield_>0)
-                    truth_track->setMomentum(bfield_);
+                    truth_track.setMomentum(bfield_);
                 //truth tracks phi needs to be corrected
-                if (truth_track->getPhi() > TMath::Pi())
-                    truth_track->setPhi(truth_track->getPhi() - (TMath::Pi()) * 2.);
+                if (truth_track.getPhi() > TMath::Pi())
+                    truth_track.setPhi(truth_track.getPhi() - (TMath::Pi()) * 2.);
                 
                 truthTracks_.push_back(truth_track);
             }
@@ -310,7 +287,7 @@ bool TrackingProcessor::process(IEvent* ievent) {
                     int ly = trackRes_data->getIntVal(i_res);
                     double res = trackRes_data->getDoubleVal(i_res);
                     double sigma = trackRes_data->getFloatVal(i_res);
-                    trkResHistos_->FillResidualHistograms(track,ly,res,sigma);
+                    trkResHistos_->FillResidualHistograms(&track,ly,res,sigma);
                 }
             }//trackResData exists
         }//doResiduals

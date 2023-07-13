@@ -41,9 +41,7 @@ void VertexProcessor::initialize(TTree* tree) {
 bool VertexProcessor::process(IEvent* ievent) {
 
     if (debug_ > 0) std::cout << "VertexProcessor: Clear output vector" << std::endl;
-    for(int i = 0; i < vtxs_.size(); i++) delete vtxs_.at(i);
     vtxs_.clear();
-    for(int i = 0; i < parts_.size(); i++) delete parts_.at(i);
     parts_.clear();
 
     Event* event = static_cast<Event*> (ievent);
@@ -92,17 +90,17 @@ bool VertexProcessor::process(IEvent* ievent) {
         lc_vtx = static_cast<EVENT::Vertex*>(lc_vtxs->getElementAt(ivtx));
 
         if (debug_ > 0) std::cout << "VertexProcessor: Build Vertex" << std::endl;
-        Vertex* vtx = utils::buildVertex(lc_vtx);
+        Vertex vtx{utils::buildVertex(lc_vtx)};
 
         if (debug_ > 0) std::cout << "VertexProcessor: Get Particles" << std::endl;
         std::vector<EVENT::ReconstructedParticle*> lc_parts = lc_vtx->getAssociatedParticle()->getParticles();
         for(auto lc_part : lc_parts)
         {
            if (debug_ > 0) std::cout << "VertexProcessor: Build particle" << std::endl;
-           Particle * part = utils::buildParticle(lc_part, gbl_kink_data, track_data);
+           Particle part{utils::buildParticle(lc_part, gbl_kink_data, track_data)};
            if (debug_ > 0) std::cout << "VertexProcessor: Add particle" << std::endl;
             parts_.push_back(part);
-            vtx->addParticle(part);
+            vtx.addParticle(&part);
         }
 
         if (debug_ > 0) std::cout << "VertexProcessor: Add Vertex" << std::endl;

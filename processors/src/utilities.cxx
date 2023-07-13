@@ -28,93 +28,87 @@ bool utils::hasCollection(EVENT::LCEvent* lc_event,const std::string& collection
 }
 
 
-Vertex* utils::buildVertex(EVENT::Vertex* lc_vertex) { 
-
-    if (!lc_vertex) 
-        return nullptr;
-
+Vertex utils::buildVertex(EVENT::Vertex* lc_vertex) { 
     //TODO move the static cast outside?
 
-    Vertex* vertex = new Vertex();
-    vertex->setChi2         (lc_vertex->getChi2());
-    vertex->setProbability  (lc_vertex->getProbability());
-    vertex->setID           (lc_vertex->id());
-    vertex->setType         (lc_vertex->getAlgorithmType());
-    vertex->setVtxParameters((std::vector<float>)lc_vertex->getParameters());
+    Vertex vertex;
+    if (!lc_vertex) return vertex;
+
+    vertex.setChi2         (lc_vertex->getChi2());
+    vertex.setProbability  (lc_vertex->getProbability());
+    vertex.setID           (lc_vertex->id());
+    vertex.setType         (lc_vertex->getAlgorithmType());
+    vertex.setVtxParameters((std::vector<float>)lc_vertex->getParameters());
 
     //TODO Rotate the covariance matrix!
-    vertex->setCovariance   ((std::vector<float>)lc_vertex->getCovMatrix());
-    //std::cout<<lc_vertex->getVertexParameterNames[0]<<std::endl;
-    vertex->setType         (lc_vertex->getAlgorithmType());
+    vertex.setCovariance   ((std::vector<float>)lc_vertex->getCovMatrix());
+    //std::cout<<lc_vertex.getVertexParameterNames[0]<<std::endl;
+    vertex.setType         (lc_vertex->getAlgorithmType());
 
-    vertex->setPos          (lc_vertex->getPosition(),false);
+    vertex.setPos          (lc_vertex->getPosition(),false);
 
 
     return vertex;
 }
 
-Particle* utils::buildParticle(EVENT::ReconstructedParticle* lc_particle,
+Particle utils::buildParticle(EVENT::ReconstructedParticle* lc_particle,
         EVENT::LCCollection* gbl_kink_data,
         EVENT::LCCollection* track_data)
 
 { 
 
+    Particle part;
     if (!lc_particle) 
-        return nullptr;
+        return part;
 
-    Particle* part = new Particle();
     // Set the charge of the HpsParticle    
-    part->setCharge(lc_particle->getCharge());
+    part.setCharge(lc_particle->getCharge());
 
     // Set the HpsParticle type
-    part->setType(lc_particle->getType());
+    part.setType(lc_particle->getType());
 
     // Set the energy of the HpsParticle
-    part->setEnergy(lc_particle->getEnergy());
+    part.setEnergy(lc_particle->getEnergy());
 
     // Set the momentum of the HpsParticle
-    part->setMomentum(lc_particle->getMomentum());
+    part.setMomentum(lc_particle->getMomentum());
 
     // Set the mass of the HpsParticle
-    part->setMass(lc_particle->getMass());
+    part.setMass(lc_particle->getMass());
 
     // Set the goodness of PID for the HpsParticle
-    part->setGoodnessOfPID(lc_particle->getGoodnessOfPID());
+    part.setGoodnessOfPID(lc_particle->getGoodnessOfPID());
 
     // Set the PDG ID for the HpsParticle
-    part->setPDG(lc_particle->getParticleIDUsed()->getPDG());
+    part.setPDG(lc_particle->getParticleIDUsed()->getPDG());
 
     // Set the Track for the HpsParticle
     if (lc_particle->getTracks().size()>0)
     {
-        Track * trkPtr = utils::buildTrack(lc_particle->getTracks()[0], gbl_kink_data, track_data);
-        part->setTrack(trkPtr);
-        delete trkPtr;
+        part.setTrack(utils::buildTrack(lc_particle->getTracks()[0], gbl_kink_data, track_data));
     }
 
     // Set the Track for the HpsParticle
     if (lc_particle->getClusters().size() > 0)
     {
-        CalCluster * clusBuf = utils::buildCalCluster(lc_particle->getClusters()[0]);
-        part->setCluster(clusBuf);
-        delete clusBuf;
+        part.setCluster(utils::buildCalCluster(lc_particle->getClusters()[0]));
     }
 
     return part;
 }
 
-CalCluster* utils::buildCalCluster(EVENT::Cluster* lc_cluster) 
+CalCluster utils::buildCalCluster(EVENT::Cluster* lc_cluster) 
 { 
 
-    if (!lc_cluster) 
-        return nullptr;
 
-    CalCluster* cluster = new CalCluster();
+    CalCluster cluster;
+    if (!lc_cluster) 
+        return cluster;
     // Set the cluster position
-    cluster->setPosition(lc_cluster->getPosition());
+    cluster.setPosition(lc_cluster->getPosition());
 
     // Set the cluster energy
-    cluster->setEnergy(lc_cluster->getEnergy());
+    cluster.setEnergy(lc_cluster->getEnergy());
 
     // Get the ecal hits used to create the cluster
     EVENT::CalorimeterHitVec lc_hits = lc_cluster->getCalorimeterHits();
@@ -134,19 +128,19 @@ CalCluster* utils::buildCalCluster(EVENT::Cluster* lc_cluster)
     }
 
     // Set the time of the cluster
-    cluster->setTime(stime);
+    cluster.setTime(stime);
 
     return cluster;
 }
 
-bool utils::IsSameTrack(Track* trk1, Track* trk2) {
+bool utils::IsSameTrack(Track& trk1, Track& trk2) {
     double tol = 1e-6;
-    if (fabs(trk1->getD0()        - trk2->getD0())        > tol ||
-            fabs(trk1->getPhi()       - trk2->getPhi())       > tol ||
-            fabs(trk1->getOmega()     - trk2->getOmega())     > tol ||
-            fabs(trk1->getTanLambda() - trk2->getTanLambda()) > tol ||
-            fabs(trk1->getZ0()        - trk2->getZ0())        > tol ||
-            fabs(trk1->getChi2Ndf()   - trk2->getChi2Ndf())   > tol 
+    if (fabs(trk1.getD0()        - trk2.getD0())        > tol ||
+            fabs(trk1.getPhi()       - trk2.getPhi())       > tol ||
+            fabs(trk1.getOmega()     - trk2.getOmega())     > tol ||
+            fabs(trk1.getTanLambda() - trk2.getTanLambda()) > tol ||
+            fabs(trk1.getZ0()        - trk2.getZ0())        > tol ||
+            fabs(trk1.getChi2Ndf()   - trk2.getChi2Ndf())   > tol 
        ) 
         return false;
 
@@ -154,35 +148,35 @@ bool utils::IsSameTrack(Track* trk1, Track* trk2) {
 }
 
 
-Track* utils::buildTrack(EVENT::Track* lc_track,
+Track utils::buildTrack(EVENT::Track* lc_track,
         EVENT::LCCollection* gbl_kink_data,
         EVENT::LCCollection* track_data) {
 
+    Track track;
     if (!lc_track)
-        return nullptr;
+        return track;
 
-    Track* track = new Track();
     // Set the track parameters
-    track->setTrackParameters(lc_track->getD0(), 
+    track.setTrackParameters(lc_track->getD0(), 
             lc_track->getPhi(), 
             lc_track->getOmega(), 
             lc_track->getTanLambda(), 
             lc_track->getZ0());
 
     // Set the track id
-    track->setID(lc_track->id());
+    track.setID(lc_track->id());
 
     // Set the track type
-    track->setType(lc_track->getType()); 
+    track.setType(lc_track->getType()); 
 
     // Set the track fit chi^2
-    track->setChi2(lc_track->getChi2());
+    track.setChi2(lc_track->getChi2());
 
     // Set the track ndf 
-    track->setNdf(lc_track->getNdf());
+    track.setNdf(lc_track->getNdf());
     
     // Set the track covariance matrix
-    track->setCov(static_cast<std::vector<float> > (lc_track->getCovMatrix()));
+    track.setCov(static_cast<std::vector<float> > (lc_track->getCovMatrix()));
     
     // Set the position of the extrapolated track at the ECal face.  The
     // extrapolation uses the full 3D field map.
@@ -195,7 +189,7 @@ Track* utils::buildTrack(EVENT::Track* lc_track,
             track_state->getReferencePoint()[2],  
             track_state->getReferencePoint()[0]
         };
-        track->setPositionAtEcal(position_at_ecal); 
+        track.setPositionAtEcal(position_at_ecal); 
     }
 
     if (gbl_kink_data) {
@@ -223,8 +217,8 @@ Track* utils::buildTrack(EVENT::Track* lc_track,
 
             // Set the lambda and phi kink values
             for (int ikink = 0; ikink < gbl_kink_datum->getNDouble(); ++ikink) { 
-                track->setLambdaKink(ikink, gbl_kink_datum->getFloatVal(ikink));
-                track->setPhiKink(ikink, gbl_kink_datum->getDoubleVal(ikink));
+                track.setLambdaKink(ikink, gbl_kink_datum->getFloatVal(ikink));
+                track.setPhiKink(ikink, gbl_kink_datum->getDoubleVal(ikink));
             }
 
         }//gbl_kink_data has right structure
@@ -258,18 +252,18 @@ Track* utils::buildTrack(EVENT::Track* lc_track,
 
             // Set the SvtTrack isolation values
             for (int iso_index = 0; iso_index < track_datum->getNDouble(); ++iso_index) { 
-                track->setIsolation(iso_index, track_datum->getDoubleVal(iso_index));
+                track.setIsolation(iso_index, track_datum->getDoubleVal(iso_index));
             }
 	    
             // Set the SvtTrack time
-            track->setTrackTime(track_datum->getFloatVal(0));
+            track.setTrackTime(track_datum->getFloatVal(0));
 
 	    // Set the Track momentum
 	    if (track_datum->getNFloat()==4)
-	      track->setMomentum(track_datum->getFloatVal(1),track_datum->getFloatVal(2),track_datum->getFloatVal(3));
+	      track.setMomentum(track_datum->getFloatVal(1),track_datum->getFloatVal(2),track_datum->getFloatVal(3));
 	    
             // Set the volume (top/bottom) in which the SvtTrack resides
-            track->setTrackVolume(track_datum->getIntVal(0));
+            track.setTrackVolume(track_datum->getIntVal(0));
         }
 
     } //add track data  
@@ -277,7 +271,7 @@ Track* utils::buildTrack(EVENT::Track* lc_track,
     return track;
 }
 
-RawSvtHit* utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
+RawSvtHit utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
         EVENT::LCCollection* raw_svt_hit_fits) {
 
     EVENT::long64 value =
@@ -285,14 +279,14 @@ RawSvtHit* utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
         ( EVENT::long64(rawTracker_hit->getCellID1() ) << 32       );
     decoder.setValue(value);
 
-    RawSvtHit* rawHit = new RawSvtHit();
-    rawHit->setSystem(decoder["system"]);
-    rawHit->setBarrel(decoder["barrel"]);
-    rawHit->setLayer(decoder["layer"]);
-    rawHit->setModule(decoder["module"]);
-    rawHit->setSensor(decoder["sensor"]);
-    rawHit->setSide(decoder["side"]);
-    rawHit->setStrip(decoder["strip"]);
+    RawSvtHit rawHit;
+    rawHit.setSystem(decoder["system"]);
+    rawHit.setBarrel(decoder["barrel"]);
+    rawHit.setLayer(decoder["layer"]);
+    rawHit.setModule(decoder["module"]);
+    rawHit.setSensor(decoder["sensor"]);
+    rawHit.setSide(decoder["side"]);
+    rawHit.setStrip(decoder["strip"]);
 
     // Extract ADC values for this hit
     int hit_adcs[6] = { 
@@ -303,7 +297,7 @@ RawSvtHit* utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
         (int)rawTracker_hit->getADCValues().at(4), 
         (int)rawTracker_hit->getADCValues().at(5)};
 
-    rawHit->setADCs(hit_adcs);
+    rawHit.setADCs(hit_adcs);
     if (raw_svt_hit_fits) {
         std::shared_ptr<UTIL::LCRelationNavigator> rawTracker_hit_fits_nav = std::make_shared<UTIL::LCRelationNavigator>(raw_svt_hit_fits);
 
@@ -323,7 +317,7 @@ RawSvtHit* utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
             (double)hit_fit_param->getDoubleVal(3), 
             (double)hit_fit_param->getDoubleVal(4)
         };
-        rawHit->setFit(fit_params, 0);
+        rawHit.setFit(fit_params, 0);
         if(rawTracker_hit_fits_list.size()>1)
         {
             hit_fit_param = static_cast<IMPL::LCGenericObjectImpl*>(rawTracker_hit_fits_list.at(1));
@@ -333,9 +327,9 @@ RawSvtHit* utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
             fit_params[3] = (double)hit_fit_param->getDoubleVal(3); 
             fit_params[4] = (double)hit_fit_param->getDoubleVal(4);
 
-            rawHit->setFit(fit_params, 1);
+            rawHit.setFit(fit_params, 1);
         }
-        rawHit->setFitN(rawTracker_hit_fits_list.size());
+        rawHit.setFitN(rawTracker_hit_fits_list.size());
     }//raw svt hit fits
 
     return rawHit;
@@ -343,12 +337,12 @@ RawSvtHit* utils::buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
 }//build raw hit
 
 //type = 0 RotatedHelicalTrackHit type = 1 SiCluster
-TrackerHit* utils::buildTrackerHit(IMPL::TrackerHitImpl* lc_tracker_hit, bool rotate, int type) { 
+TrackerHit utils::buildTrackerHit(IMPL::TrackerHitImpl* lc_tracker_hit, bool rotate, int type) { 
 
+
+    TrackerHit tracker_hit;
     if (!lc_tracker_hit)
-        return nullptr;
-
-    TrackerHit* tracker_hit = new TrackerHit();
+        return tracker_hit;
 
     // Get the position of the LCIO TrackerHit and set the position of 
     // the TrackerHit
@@ -357,19 +351,19 @@ TrackerHit* utils::buildTrackerHit(IMPL::TrackerHitImpl* lc_tracker_hit, bool ro
         lc_tracker_hit->getPosition()[1],  //lcio y
         lc_tracker_hit->getPosition()[2]   //lcio z
     };
-    tracker_hit->setPosition(hit_position, rotate, type);
+    tracker_hit.setPosition(hit_position, rotate, type);
 
     // Set the covariance matrix of the SvtHit
-    tracker_hit->setCovarianceMatrix(lc_tracker_hit->getCovMatrix());
+    tracker_hit.setCovarianceMatrix(lc_tracker_hit->getCovMatrix());
 
     // Set the time of the SvtHit
-    tracker_hit->setTime(lc_tracker_hit->getTime());
+    tracker_hit.setTime(lc_tracker_hit->getTime());
 
     // Set the charge of the SvtHit
-    tracker_hit->setCharge(lc_tracker_hit->getEDep());
+    tracker_hit.setCharge(lc_tracker_hit->getEDep());
 
     // Set the LCIO id
-    tracker_hit->setID(lc_tracker_hit->id());
+    tracker_hit.setID(lc_tracker_hit->id());
 
     return tracker_hit;
 
@@ -377,11 +371,11 @@ TrackerHit* utils::buildTrackerHit(IMPL::TrackerHitImpl* lc_tracker_hit, bool ro
 }
 
 //type 0 rotatedHelicalHit  type 1 SiClusterHit
-bool utils::addRawInfoTo3dHit(TrackerHit* tracker_hit, 
+bool utils::addRawInfoTo3dHit(TrackerHit& tracker_hit, 
         IMPL::TrackerHitImpl* lc_tracker_hit,
-        EVENT::LCCollection* raw_svt_fits, std::vector<RawSvtHit*>* rawHits,int type) {
+        EVENT::LCCollection* raw_svt_fits, std::vector<RawSvtHit>* rawHits,int type) {
 
-    if (!tracker_hit || !lc_tracker_hit)
+    if (!lc_tracker_hit)
         return false;
 
     float rawcharge = 0;
@@ -396,12 +390,12 @@ bool utils::addRawInfoTo3dHit(TrackerHit* tracker_hit,
     for (unsigned int irh = 0 ; irh < lc_rawHits.size(); ++irh) {
 
         //TODO useless to build all of it?
-        RawSvtHit* rawHit = buildRawHit(static_cast<EVENT::TrackerRawData*>(lc_rawHits.at(irh)),raw_svt_fits); 
-        rawcharge += rawHit->getAmp(0);
-        int currentHitVolume = rawHit->getModule() % 2 ? 1 : 0;
-        int currentHitLayer  = (rawHit->getLayer() - 1 ) / 2;
+        RawSvtHit rawHit{buildRawHit(static_cast<EVENT::TrackerRawData*>(lc_rawHits.at(irh)),raw_svt_fits)};
+        rawcharge += rawHit.getAmp(0);
+        int currentHitVolume = rawHit.getModule() % 2 ? 1 : 0;
+        int currentHitLayer  = (rawHit.getLayer() - 1 ) / 2;
         if (type == 1) 
-            currentHitLayer = rawHit->getLayer() - 1;
+            currentHitLayer = rawHit.getLayer() - 1;
         if (volume == -1 )
             volume = currentHitVolume;
         else {
@@ -417,15 +411,13 @@ bool utils::addRawInfoTo3dHit(TrackerHit* tracker_hit,
         }
 
         //TODO:: store only if asked
-        tracker_hit->addRawHit(rawHit);
-        if (rawHits)
-            rawHits->push_back(rawHit);
-
+        tracker_hit.addRawHit(&rawHit);
+        if (rawHits) rawHits->push_back(rawHit);
     }
 
-    tracker_hit->setRawCharge(rawcharge);
-    tracker_hit->setVolume(volume);
-    tracker_hit->setLayer(layer);
+    tracker_hit.setRawCharge(rawcharge);
+    tracker_hit.setVolume(volume);
+    tracker_hit.setLayer(layer);
 
     return true;
 }
@@ -445,28 +437,28 @@ bool utils::isUsedByTrack(IMPL::TrackerHitImpl* lc_tracker_hit,
     return false;
 }
 
-bool utils::isUsedByTrack(TrackerHit* tracker_hit,
+bool utils::isUsedByTrack(TrackerHit& tracker_hit,
         EVENT::Track* lc_track) {
 
     EVENT::TrackerHitVec trk_lc_tracker_hits = lc_track->getTrackerHits();
 
     for (auto trk_lc_tracker_hit : trk_lc_tracker_hits) {
-        if (tracker_hit->getID() ==  trk_lc_tracker_hit->id())
+        if (tracker_hit.getID() ==  trk_lc_tracker_hit->id())
             return true;
     }
     return false;
 }
 
 
-bool utils::getParticlesFromVertex(Vertex* vtx, Particle* ele, Particle* pos) {
+bool utils::getParticlesFromVertex(Vertex& vtx, Particle* ele, Particle* pos) {
 
-    for (int ipart = 0; ipart < vtx->getParticles().GetEntries(); ++ipart) {
-        int pdg_id = ((Particle*)vtx->getParticles().At(ipart))->getPDG();
+    for (int ipart = 0; ipart < vtx.getParticles().GetEntries(); ++ipart) {
+        int pdg_id = ((Particle*)vtx.getParticles().At(ipart))->getPDG();
         if (pdg_id == 11) {
-            ele = (Particle*)vtx->getParticles().At(ipart);
+            ele = (Particle*)vtx.getParticles().At(ipart);
         }
         else if (pdg_id == -11) {
-            pos = (Particle*)vtx->getParticles().At(ipart);
+            pos = (Particle*)vtx.getParticles().At(ipart);
         }
 
         else {

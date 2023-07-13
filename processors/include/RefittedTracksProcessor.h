@@ -91,21 +91,21 @@ class RefittedTracksProcessor : public Processor {
     private: 
 
         /** Container to hold all Track objects. */
-	    std::vector<Track*> tracks_{};
+	    std::vector<Track> tracks_{};
 
         /** Container to hold all Track objects. */
-	    std::vector<Track*> refit_tracks_{};
+	    std::vector<Track> refit_tracks_{};
         
         /** Container to hold the hits on track */
-	    std::vector<TrackerHit*> hits_{};
+	    std::vector<TrackerHit> hits_{};
 
         /** Container to hold the raw hits */
-        std::vector<RawSvtHit*> raw_hits_{};
+        std::vector<RawSvtHit> raw_hits_{};
         
         /** Container to hold vertex objects */
-        std::vector<Vertex*> vertices_{};
+        std::vector<Vertex> vertices_{};
         /** Container to hold refit vertex objects */
-        std::vector<Vertex*> vertices_refit_{};
+        std::vector<Vertex> vertices_refit_{};
 	
         bool _debug{false}; //!< description
 

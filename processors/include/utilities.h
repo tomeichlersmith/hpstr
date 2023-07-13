@@ -50,7 +50,7 @@ namespace utils {
      * @param lc_vertex 
      * @return Vertex* 
      */
-    Vertex* buildVertex(EVENT::Vertex* lc_vertex);
+    Vertex buildVertex(EVENT::Vertex* lc_vertex);
     
     /**
      * @brief description
@@ -60,7 +60,7 @@ namespace utils {
      * @param track_data 
      * @return Particle* 
      */
-    Particle* buildParticle(EVENT::ReconstructedParticle* lc_particle, 
+    Particle buildParticle(EVENT::ReconstructedParticle* lc_particle, 
                             EVENT::LCCollection* gbl_kink_data,
                             EVENT::LCCollection* track_data);
 
@@ -72,7 +72,7 @@ namespace utils {
      * @param track_data 
      * @return Track* 
      */
-    Track* buildTrack(EVENT::Track* lc_track, 
+    Track buildTrack(EVENT::Track* lc_track, 
                       EVENT::LCCollection* gbl_kink_data, 
                       EVENT::LCCollection* track_data);
 
@@ -85,9 +85,9 @@ namespace utils {
      * @return true 
      * @return false 
      */
-    bool IsSameTrack(Track* trk1, Track* trk2);
+    bool IsSameTrack(Track& trk1, Track& trk2);
 
-    RawSvtHit* buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
+    RawSvtHit buildRawHit(EVENT::TrackerRawData* rawTracker_hit,
                            EVENT::LCCollection* raw_svt_hit_fits);
 
     /**
@@ -98,7 +98,7 @@ namespace utils {
      * @param type 
      * @return TrackerHit* 
      */
-    TrackerHit* buildTrackerHit(IMPL::TrackerHitImpl* lc_trackerHit,bool rotate=true, int type = 0);
+    TrackerHit buildTrackerHit(IMPL::TrackerHitImpl* lc_trackerHit,bool rotate=true, int type = 0);
 
     /**
      * @brief description
@@ -106,7 +106,7 @@ namespace utils {
      * @param lc_cluster 
      * @return CalCluster* 
      */
-    CalCluster* buildCalCluster(EVENT::Cluster* lc_cluster);
+    CalCluster buildCalCluster(EVENT::Cluster* lc_cluster);
 
     /**
      * @brief description
@@ -119,10 +119,10 @@ namespace utils {
      * @return true 
      * @return false 
      */
-    bool addRawInfoTo3dHit(TrackerHit* tracker_hit,
+    bool addRawInfoTo3dHit(TrackerHit& tracker_hit,
                            IMPL::TrackerHitImpl* lc_tracker_hit,
                            EVENT::LCCollection* raw_svt_fits,
-                           std::vector<RawSvtHit*>* rawHits = nullptr, int type = 0);
+                           std::vector<RawSvtHit>* rawHits = nullptr, int type = 0);
 
 
     /**
@@ -144,7 +144,7 @@ namespace utils {
      * @return true 
      * @return false 
      */
-    bool isUsedByTrack(TrackerHit* tracker_hit,
+    bool isUsedByTrack(TrackerHit& tracker_hit,
                        EVENT::Track* lc_track);
 
     /**
@@ -156,7 +156,7 @@ namespace utils {
      * @return true 
      * @return false 
      */
-    bool getParticlesFromVertex(Vertex* vtx, Particle* ele, Particle* pos);
+    bool getParticlesFromVertex(Vertex& vtx, Particle* ele, Particle* pos);
     
     /**
      * @brief description

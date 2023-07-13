@@ -77,8 +77,8 @@ class VertexProcessor : public Processor {
     private: 
 
         /** Containers to hold all TrackerHit objects. */
-        std::vector<Vertex*> vtxs_{}; //!< description
-        std::vector<Particle*> parts_{}; //!< description
+        std::vector<Vertex> vtxs_{}; //!< description
+        std::vector<Particle> parts_{}; //!< description
         std::string vtxCollLcio_{"UnconstrainedV0Vertices"}; //!< description
         std::string vtxCollRoot_{"UnconstrainedV0Vertices"}; //!< description
         std::string partCollRoot_{"ParticlesOnVertices"}; //!< description

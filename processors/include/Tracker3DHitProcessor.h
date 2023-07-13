@@ -79,7 +79,7 @@ class Tracker3DHitProcessor : public Processor {
 
     private: 
         /** Container to hold all TrackerHit objects. */
-        std::vector<TrackerHit*> hits_; 
+        std::vector<TrackerHit> hits_; 
         std::string hitCollLcio_{"RotatedHelicalTrackHits"}; //!< description
         std::string hitCollRoot_{"RotatedHelicalTrackHits"}; //!< description
 

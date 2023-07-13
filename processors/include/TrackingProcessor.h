@@ -90,23 +90,23 @@ class TrackingProcessor : public Processor {
     private: 
 
         /** Container to hold all TrackerHit objects, and collection names. */
-        std::vector<TrackerHit*> hits_{}; 
+        std::vector<TrackerHit> hits_{}; 
         std::string trkhitCollRoot_{"RotatedHelicalOnTrackHits"}; //!< description
 
         /** Container to hold all Track objects. */
-        std::vector<Track*> tracks_{};
+        std::vector<Track> tracks_{};
         std::string trkCollLcio_{"GBLTracks"}; //!< collection name
         std::string kinkRelCollLcio_{"GBLKinkDataRelations"}; //!< collection name
         std::string trkRelCollLcio_{"TrackDataRelations"}; //!< collection name
         std::string trkCollRoot_{"GBLTracks"}; //!< collection name
 
         /** Container to hold all raw hits objecs. */
-        std::vector<RawSvtHit*> rawhits_{};
+        std::vector<RawSvtHit> rawhits_{};
         std::string hitFitsCollLcio_{"SVTFittedRawTrackerHits"}; //!< collection name
         std::string rawhitCollRoot_{"SVTRawHitsOnTrack"}; //!< collection name
         
         /** Container to hold truth tracks */
-        std::vector<Track*> truthTracks_{};
+        std::vector<Track> truthTracks_{};
         std::string truthTracksCollRoot_{""}; //!< description
         std::string truthTracksCollLcio_{""}; //!< description
         

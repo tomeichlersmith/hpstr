@@ -30,8 +30,6 @@ void Tracker3DHitProcessor::initialize(TTree* tree) {
 }
 
 bool Tracker3DHitProcessor::process(IEvent* ievent) {
-
-    for(int i = 0; i < hits_.size(); i++) delete hits_.at(i);
     hits_.clear();
 
     Event* event = static_cast<Event*> (ievent);
@@ -76,7 +74,7 @@ bool Tracker3DHitProcessor::process(IEvent* ievent) {
         IMPL::TrackerHitImpl* lc_tracker_hit = static_cast<IMPL::TrackerHitImpl*>(tracker_hits->getElementAt(ihit));
 
         // Build a TrackerHit
-        TrackerHit* tracker_hit = utils::buildTrackerHit(lc_tracker_hit);
+        TrackerHit tracker_hit{utils::buildTrackerHit(lc_tracker_hit)};
 
         if(hasMCParts)
         {
@@ -90,14 +88,14 @@ bool Tracker3DHitProcessor::process(IEvent* ievent) {
             {
                 IMPL::MCParticleImpl* lc_particle
                     = static_cast<IMPL::MCParticleImpl*>(mcPart_list.at(ipart));
-                tracker_hit->addMCPartID(lc_particle->id());
+                tracker_hit.addMCPartID(lc_particle->id());
                 if(debug_ > 0) std::cout << "Has Related MC Particle with ID " << lc_particle->id() << std::endl;
             }
         }
 
         // Map the TrackerHit object to the corresponding SvtHit object. This
         // will be used later when setting references for hits on tracks.
-        hit_map[lc_tracker_hit] = tracker_hit; 
+        hit_map[lc_tracker_hit] = &tracker_hit; 
         hits_.push_back(tracker_hit);
 
     }

@@ -86,9 +86,9 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
   
     
         for (int ivtx = 0 ; ivtx < u_vtxs->getNumberOfElements(); ++ivtx) {
-            Vertex* vtx = utils::buildVertex(static_cast<EVENT::Vertex*>(u_vtxs->getElementAt(ivtx)));
+            Vertex vtx{utils::buildVertex(static_cast<EVENT::Vertex*>(u_vtxs->getElementAt(ivtx)))};
             vertices_.push_back(vtx);
-            _OriginalTrkHistos->Fill1DHistograms(nullptr,vtx);
+            _OriginalTrkHistos->Fill1DHistograms(nullptr,&vtx);
         }
         _OriginalTrkHistos->Fill1DHisto("n_vertices_h",u_vtxs->getNumberOfElements());
     }
@@ -103,9 +103,9 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
         u_vtxs_r = event->getLCCollection("UnconstrainedV0Vertices_refit");
     
         for (int ivtx = 0 ; ivtx < u_vtxs_r->getNumberOfElements(); ++ivtx) {
-            Vertex* vtx_r = utils::buildVertex(static_cast<EVENT::Vertex*>(u_vtxs_r->getElementAt(ivtx)));
+            Vertex vtx_r{utils::buildVertex(static_cast<EVENT::Vertex*>(u_vtxs_r->getElementAt(ivtx)))};
             vertices_refit_.push_back(vtx_r);
-            _RefitTrkHistos->Fill1DHistograms(nullptr,vtx_r);
+            _RefitTrkHistos->Fill1DHistograms(nullptr,&vtx_r);
         }
         _RefitTrkHistos->Fill1DHisto("n_vertices_h",u_vtxs_r->getNumberOfElements());
     }
@@ -139,7 +139,7 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
         EVENT::LCCollection* track_data = static_cast<EVENT::LCCollection*>(event->getLCCollection(Collections::TRACK_DATA_REL));
     
         // Add a track to the event
-        Track* track = utils::buildTrack(lc_track, gbl_kink_data, track_data);
+        Track track{utils::buildTrack(lc_track, gbl_kink_data, track_data)};
         
 
         //Get the refitted tracks relations
@@ -166,11 +166,11 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
         //Build the vector of Tracker Hits on track, get the info and attach them to the track. 
         for (int ith = 0; ith<lc_tracker_hits.size();ith++) {
             IMPL::TrackerHitImpl* lc_th = static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hits.at(ith));
-            TrackerHit* th = utils::buildTrackerHit(lc_th);
+            TrackerHit th{utils::buildTrackerHit(lc_th)};
             //TODO should check the status of this return
             utils::addRawInfoTo3dHit(th,lc_th,raw_svt_hit_fits);
             //TODO this should be under some sort of saving flag
-            track->addHit(th);
+            track.addHit(&th);
             hits_.push_back(th);
 
             //Get shared Hits information
@@ -179,18 +179,18 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
                 EVENT::Track* j_lc_track = static_cast<EVENT::Track*>(tracks->getElementAt(jtrack));
                 if (utils::isUsedByTrack(th,j_lc_track)) {
                     //The hit is not already in the shared list
-                    if (std::find(SharedHits[itrack].begin(), SharedHits[itrack].end(),th->getID()) == SharedHits[itrack].end()) {
-                        SharedHits[itrack].push_back(th->getID());
-                        if (th->getLayer() == 0 )
+                    if (std::find(SharedHits[itrack].begin(), SharedHits[itrack].end(),th.getID()) == SharedHits[itrack].end()) {
+                        SharedHits[itrack].push_back(th.getID());
+                        if (th.getLayer() == 0 )
                             SharedHitsLy0[itrack] = true;
-                        if (th->getLayer() == 1 ) 
+                        if (th.getLayer() == 1 ) 
                             SharedHitsLy1[itrack] = true;
                     }
-                    if (std::find(SharedHits[jtrack].begin(), SharedHits[jtrack].end(),th->getID()) == SharedHits[jtrack].end()) {
-                        SharedHits[jtrack].push_back(th->getID());
-                        if (th->getLayer() == 0 ) 
+                    if (std::find(SharedHits[jtrack].begin(), SharedHits[jtrack].end(),th.getID()) == SharedHits[jtrack].end()) {
+                        SharedHits[jtrack].push_back(th.getID());
+                        if (th.getLayer() == 0 ) 
                             SharedHitsLy0[jtrack] = true;
-                        if (th->getLayer() == 1 ) 
+                        if (th.getLayer() == 1 ) 
                             SharedHitsLy1[jtrack] = true;
                     }
                 } // found shared hit
@@ -198,9 +198,9 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
         } // loop on hits on track i
 
         //TODO:: bug prone?
-        track->setNShared(SharedHits[itrack].size());
-        track->setSharedLy0(SharedHitsLy0[itrack]);
-        track->setSharedLy1(SharedHitsLy1[itrack]);
+        track.setNShared(SharedHits[itrack].size());
+        track.setSharedLy0(SharedHitsLy0[itrack]);
+        track.setSharedLy1(SharedHitsLy1[itrack]);
     
         //std::cout<<"Tracker hits time:";
         //for (auto lc_tracker_hit : lc_tracker_hits) { 
@@ -228,7 +228,7 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
                 }
         }
 
-        _OriginalTrkHistos->Fill1DHistograms(track);
+        _OriginalTrkHistos->Fill1DHistograms(&track);
     
         _RefitTrkHistos->Fill1DHisto("n_tracks_h",refitted_tracks_list.size());
     
@@ -245,7 +245,7 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
                 static_cast<EVENT::LCCollection*>(event->getLCCollection("GBLKinkDataRelations_refit"));
             // Get the track data
             EVENT::LCCollection* rfit_track_data = nullptr;
-            Track* rfit_track = utils::buildTrack(lc_rfit_track,rfit_gbl_kink_data,rfit_track_data);
+            Track rfit_track{utils::buildTrack(lc_rfit_track,rfit_gbl_kink_data,rfit_track_data)};
             EVENT::TrackerHitVec lc_rf_tracker_hits = lc_rfit_track->getTrackerHits();
       
             //TODO::move to utilities
@@ -254,7 +254,7 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
             for (auto lc_rf_tracker_hit : lc_rf_tracker_hits) {
                 mean += lc_rf_tracker_hit->getTime();
             }
-            rfit_track->setTrackTime(mean / lc_rf_tracker_hits.size());
+            rfit_track.setTrackTime(mean / lc_rf_tracker_hits.size());
       
             //std::cout<<"Refitted tracks params: "<<std::endl;
             //rfit_track->Print();      
@@ -265,17 +265,17 @@ bool RefittedTracksProcessor::process(IEvent* ievent) {
             //}
             //std::cout<<std::endl;
       
-            _RefitTrkHistos->Fill1DHistograms(rfit_track);
-            _RefitTrkHistos->FillTrackComparisonHistograms(track,rfit_track);
+            _RefitTrkHistos->Fill1DHistograms(&rfit_track);
+            _RefitTrkHistos->FillTrackComparisonHistograms(&track,&rfit_track);
    
-            if (fabs(rfit_track->getZ0()) < fabs(track->getZ0())) {
-                _RefitTrkHistos_z0cut->Fill1DHistograms(rfit_track);
-                _RefitTrkHistos_z0cut->FillTrackComparisonHistograms(track,rfit_track);
+            if (fabs(rfit_track.getZ0()) < fabs(track.getZ0())) {
+                _RefitTrkHistos_z0cut->Fill1DHistograms(&rfit_track);
+                _RefitTrkHistos_z0cut->FillTrackComparisonHistograms(&track,&rfit_track);
             }
 
-            if (rfit_track->getChi2Ndf() < track->getChi2Ndf()) {
-                _RefitTrkHistos_chi2cut->Fill1DHistograms(rfit_track);
-                _RefitTrkHistos_chi2cut->FillTrackComparisonHistograms(track,rfit_track);
+            if (rfit_track.getChi2Ndf() < track.getChi2Ndf()) {
+                _RefitTrkHistos_chi2cut->Fill1DHistograms(&rfit_track);
+                _RefitTrkHistos_chi2cut->FillTrackComparisonHistograms(&track,&rfit_track);
             }
         }//loop on refit tracks
     }//Loop on tracks

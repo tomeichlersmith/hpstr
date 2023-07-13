@@ -78,7 +78,7 @@ class Tracker2DHitProcessor : public Processor {
     private: 
 
         /** Container to hold all TrackerHit objects. */
-        std::vector<TrackerHit*> hits_; 
+        std::vector<TrackerHit> hits_; 
         std::string hitCollLcio_{"RotatedHelicalTrackHits"};
         std::string hitCollRoot_{"RotatedHelicalTrackHits"};
 

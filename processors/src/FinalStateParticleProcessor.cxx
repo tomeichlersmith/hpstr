@@ -48,22 +48,8 @@ bool FinalStateParticleProcessor::process(IEvent* ievent) {
 
     if (debug_ > 0) std::cout << "FinalStateParticleProcessor: Clear output vector" << std::endl;
     
-    //Clean up
-    if (hits_.size() > 0) {
-        for (std::vector<TrackerHit *>::iterator it = hits_.begin(); it != hits_.end(); ++it) {
-            delete *it;
-        }
-        hits_.clear();
-    }
-    
-    if (rawhits_.size() > 0) {
-        for (std::vector<RawSvtHit *>::iterator it = rawhits_.begin(); it != rawhits_.end(); ++it) {
-            delete *it;
-        }
-        rawhits_.clear();
-    } 
-    
-    for(int i = 0; i < fsps_.size(); i++) delete fsps_.at(i);
+    hits_.clear();
+    rawhits_.clear();
     fsps_.clear();
 
     Event* event = static_cast<Event*> (ievent);
@@ -125,26 +111,25 @@ bool FinalStateParticleProcessor::process(IEvent* ievent) {
         lc_fsp = static_cast<EVENT::ReconstructedParticle*>(lc_fsps->getElementAt(ifsp));
         if (debug_ > 0) std::cout << "FinalStateParticleProcessor: Build Particle" << std::endl;
         
-        Particle * fsp = utils::buildParticle(lc_fsp, gbl_kink_data, track_data);
+        Particle fsp{utils::buildParticle(lc_fsp, gbl_kink_data, track_data)};
         if (lc_fsp->getTracks().size()>0){
             EVENT::Track* lc_track = static_cast<EVENT::Track*>(lc_fsp->getTracks()[0]);
-            Track* track = utils::buildTrack(lc_track,gbl_kink_data,track_data);
+            Track track{utils::buildTrack(lc_track,gbl_kink_data,track_data)};
             EVENT::TrackerHitVec lc_tracker_hits = lc_track->getTrackerHits(); 
             for (auto lc_tracker_hit : lc_tracker_hits) {
-                TrackerHit* tracker_hit = utils::buildTrackerHit(static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hit),rotateHits,hitType);
-                std::vector<RawSvtHit*> rawSvthitsOn3d;
+                TrackerHit tracker_hit{utils::buildTrackerHit(static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hit),rotateHits,hitType)};
+                std::vector<RawSvtHit> rawSvthitsOn3d;
                 utils::addRawInfoTo3dHit(tracker_hit,static_cast<IMPL::TrackerHitImpl*>(lc_tracker_hit),
                                          raw_svt_hit_fits,&rawSvthitsOn3d,hitType);
                 for (auto rhit : rawSvthitsOn3d)
                     rawhits_.push_back(rhit);
-                    //rawhits_->addHit(rhit); 
 
-                track->addHit(tracker_hit);
+                track.addHit(&tracker_hit);
                 hits_.push_back(tracker_hit);
                 rawSvthitsOn3d.clear();
                 // loop on j>i tracks
             }
-            fsp->setTrack(track);
+            fsp.setTrack(track);
         }   
          
         if (debug_ > 0) std::cout << "FinalStateParticleProcessor: Add Particle" << std::endl;

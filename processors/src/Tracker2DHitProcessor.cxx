@@ -31,7 +31,6 @@ void Tracker2DHitProcessor::initialize(TTree* tree) {
 
 bool Tracker2DHitProcessor::process(IEvent* ievent) {
 
-    for(int i = 0; i < hits_.size(); i++) delete hits_.at(i);
     hits_.clear();
 
     Event* event = static_cast<Event*> (ievent);
@@ -79,7 +78,7 @@ bool Tracker2DHitProcessor::process(IEvent* ievent) {
             std::cout << "tracker hit lcio id: " << lc_tracker_hit->id() << std::endl;
 
         // Build a TrackerHit
-        TrackerHit* tracker_hit = utils::buildTrackerHit(lc_tracker_hit);
+        TrackerHit tracker_hit{utils::buildTrackerHit(lc_tracker_hit)};
 
         if(hasMCParts)
         {
@@ -97,7 +96,7 @@ bool Tracker2DHitProcessor::process(IEvent* ievent) {
                 for(int isimhit = 0; isimhit < lc_simtrackerhits.size(); isimhit++){
                     IMPL::SimTrackerHitImpl* lc_simhit = static_cast<IMPL::SimTrackerHitImpl*>(lc_simtrackerhits.at(isimhit));
                     IMPL::MCParticleImpl* lc_mcp = static_cast<IMPL::MCParticleImpl*>(lc_simhit->getMCParticle());
-                    tracker_hit->addMCPartID(lc_mcp->id());
+                    tracker_hit.addMCPartID(lc_mcp->id());
                     if(debug_ > 0) {
                         std::cout << "simtrackerhit lcio id: " << lc_simhit->id() << std::endl;
                         std::cout << "mcp lcio id: " << lc_mcp->id() << std::endl;
