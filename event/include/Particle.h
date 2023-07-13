@@ -39,7 +39,7 @@ class Particle : public TObject {
          *
          * @param track Track associated to particle
          */
-        void setTrack(Track* track) { track_ = *track; }
+        void setTrack(Track track) { track_ = track; }
         
         /**
          * @return A reference to the track associated with this
@@ -53,7 +53,7 @@ class Particle : public TObject {
          *
          * @param cluster Cluster whose reference will be added
          */
-        void setCluster(CalCluster* cluster) {cluster_ = *cluster;}
+        void setCluster(CalCluster cluster) {cluster_ = cluster;}
 
         /**
          * @return An array of references to the calorimeter clusters associated
