@@ -14,18 +14,10 @@ MCParticle::MCParticle()
 
 MCParticle::~MCParticle() {
     Clear();
-    delete daughters_;
 }
 
 void MCParticle::Clear(Option_t* /* option */) {
     TObject::Clear();
-    daughters_->Delete();     
-    n_daughters_ = 0;    
-}
-
-void MCParticle::addDaughter(MCParticle* particle) {
-    ++n_daughters_;
-    daughters_->Add(static_cast<TObject*>(particle)); 
 }
 
 void MCParticle::setMomentum(const double* momentum) {

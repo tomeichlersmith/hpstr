@@ -91,7 +91,7 @@ class MCParticleProcessor : public Processor {
     private:
 
         /** Map to hold all particle collections. */
-        std::vector<MCParticle*> mc_particles_{}; 
+        std::vector<MCParticle> mc_particles_{}; 
         std::string mcPartCollLcio_{"MCParticle"}; //!< description
         std::string mcPartCollRoot_{"MCParticle"}; //!< description
 

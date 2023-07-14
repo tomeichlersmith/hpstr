@@ -30,22 +30,6 @@ class MCParticle : public TObject {
         void Clear(Option_t *option="");
 
         /**
-         * Add a reference to an Particle object.  This will be used to
-         * add daughter particles to this particle.
-         *
-         * @param particle Daughter particle composing this particle
-         */
-        void addDaughter(MCParticle* particle); 
-       
-        /**
-         * Get the daughter particles composing this particle.
-         *
-         * @return An array of references to the daughter particles associated
-         *         with this particle
-         */
-        TRefArray* getDaughters() const { return daughters_; }; 
-
-        /**
          * Set the charge of the particle.
          *
          * @param charge_ MCParticle charge
@@ -182,18 +166,8 @@ class MCParticle : public TObject {
         ClassDef(MCParticle, 1);
 
     private:
-
-        /**
-         *  An array of references to daughter particles associated with this
-         *  particle
-         */  
-        TRefArray* daughters_{new TRefArray{}}; 
-    
         /** The LCIO ID of this particle */
         int id_{-9999}; 
-
-        /** The number of daughters associated with this particle */    
-        int n_daughters_{0};
 
         /** The charge of this particle */
         int charge_{-9999}; 

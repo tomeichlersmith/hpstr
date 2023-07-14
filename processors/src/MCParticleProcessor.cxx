@@ -54,14 +54,7 @@ bool MCParticleProcessor::process(IEvent* ievent) {
 
 
     //Clean up
-    if (mc_particles_.size() > 0 ) 
-    {
-        for (std::vector<MCParticle*>::iterator it = mc_particles_.begin(); it != mc_particles_.end(); ++it) 
-        {
-            delete *it;
-        }
-        mc_particles_.clear();
-    }
+    mc_particles_.clear();
 
 
     // Loop through all of the particles in the event
@@ -72,87 +65,47 @@ bool MCParticleProcessor::process(IEvent* ievent) {
             = static_cast<IMPL::MCParticleImpl*>(lc_particles->getElementAt(iparticle)); 
 
         // Make an MCParticle to build and add to vector
-        MCParticle* particle = new MCParticle();
+        MCParticle particle;
 
         // Set the charge of the HpsMCParticle    
-        particle->setCharge(lc_particle->getCharge());
+        particle.setCharge(lc_particle->getCharge());
 
         // Set the HpsMCParticle type
-        particle->setTime(lc_particle->getTime());  
+        particle.setTime(lc_particle->getTime());  
 
         // Set the energy of the HpsMCParticle
-        particle->setEnergy(lc_particle->getEnergy());
+        particle.setEnergy(lc_particle->getEnergy());
 
         // Set the momentum of the HpsMCParticle
-        particle->setMomentum(lc_particle->getMomentum()); 
+        particle.setMomentum(lc_particle->getMomentum()); 
 
         // Set the momentum of HpsMCParticle at Endpoint
-        particle->setEndpointMomentum(lc_particle->getMomentumAtEndpoint());
+        particle.setEndpointMomentum(lc_particle->getMomentumAtEndpoint());
 
         // Set the mass of the HpsMCParticle
-        particle->setMass(lc_particle->getMass());
+        particle.setMass(lc_particle->getMass());
 
         // Set the PDG of the particle
-        particle->setPDG(lc_particle->getPDG());    
+        particle.setPDG(lc_particle->getPDG());    
 
         // Set the LCIO id of the particle
-        particle->setID(lc_particle->id());    
+        particle.setID(lc_particle->id());    
 
         // Set the PDG of the particle
         std::vector<EVENT::MCParticle*> parentVec = lc_particle->getParents();
-        if(parentVec.size() > 0) particle->setMomPDG(parentVec.at(0)->getPDG());    
+        if(parentVec.size() > 0) particle.setMomPDG(parentVec.at(0)->getPDG());    
 
         // Set the generator status of the particle
-        particle->setGenStatus(lc_particle->getGeneratorStatus());    
+        particle.setGenStatus(lc_particle->getGeneratorStatus());    
 
         // Set the generator status of the particle
-        particle->setSimStatus(lc_particle->getSimulatorStatus());    
-
-        // Loop through all of the tracks associated with the particle
-        // and add references to the MCParticle object.
-        /*for (auto const &lc_track : lc_particle->getTracks()) { 
-
-          TClonesArray* tracks = event->getCollection(Collections::GBL_TRACKS); 
-
-        // Loop through all of the tracks in the HpsEvent and find the one
-        // that matches the track associated with the particle
-        for (int itrack = 0; itrack < tracks->GetEntriesFast(); ++itrack) { 
-        Track* track = static_cast<Track*>(tracks->At(itrack)); 
-
-        // Use the track chi^2 to find the match
-        // TODO: Verify that the chi^2 is unique enough to find the match
-        if (lc_track->getChi2() == track->getChi2()) {
-
-        // Add a reference to the track 
-        particle->addTrack(track);
-
-        // If the particle is a final state particle, add a
-        // reference from the corresponding track to the particle
-        if ((collections.first.compare(Collections::FINAL_STATE_PARTICLES) == 0)
-        || (collections.first.compare(Collections::OTHER_ELECTRONS) == 0) ) {                    
-        track->setMCParticle(particle);
-        track->setMomentum(particle->getMomentum()); 
-        track->setCharge(particle->getCharge());  
-        } 
-        break; 
-        }
-        }
-
-        }*/   
-
-        // Only add vertex information if the particle is not a final state particle
-        //if ((collections.first.compare(Collections::FINAL_STATE_PARTICLES) == 0) || 
-        //        (collections.first.compare(Collections::OTHER_ELECTRONS) == 0)) {                    
-        //    // Set the PDG ID of the particle
-        //    particle->setPDG(lc_particle->getParticleIDUsed()->getPDG());    
-        //    continue;
-        //}
+        particle.setSimStatus(lc_particle->getSimulatorStatus());    
 
         // Set the vertex position of the particle
-        particle->setVertexPosition(lc_particle->getVertex()); 
+        particle.setVertexPosition(lc_particle->getVertex()); 
 
         // Set the vertex position of the particle
-        particle->setEndPoint(lc_particle->getEndpoint()); 
+        particle.setEndPoint(lc_particle->getEndpoint()); 
 
         mc_particles_.push_back(particle);
         // If the particle has daughter particles, add the daughters to the
