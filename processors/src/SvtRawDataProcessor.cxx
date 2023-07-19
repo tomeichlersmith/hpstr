@@ -71,7 +71,6 @@ bool SvtRawDataProcessor::process(IEvent* ievent) {
 
     // Loop over all of the raw SVT hits in the LCIO event and add them to the 
     // HPS event
-    for(int i = 0; i < rawhits_.size(); i++) delete rawhits_.at(i);
     rawhits_.clear();
 
     for (int ihit = 0; ihit < raw_svt_hits->getNumberOfElements(); ++ihit) {
@@ -85,15 +84,15 @@ bool SvtRawDataProcessor::process(IEvent* ievent) {
         decoder.setValue(value);
 
         // Add a raw tracker hit to the event
-        RawSvtHit* rawHit = new RawSvtHit();
+        RawSvtHit& rawHit{rawhits_.emplace_back()};
 
-        rawHit->setSystem(decoder["system"]);
-        rawHit->setBarrel(decoder["barrel"]);
-        rawHit->setLayer(decoder["layer"]);
-        rawHit->setModule(decoder["module"]);
-        rawHit->setSensor(decoder["sensor"]);
-        rawHit->setSide(decoder["side"]);
-        rawHit->setStrip(decoder["strip"]);
+        rawHit.setSystem(decoder["system"]);
+        rawHit.setBarrel(decoder["barrel"]);
+        rawHit.setLayer(decoder["layer"]);
+        rawHit.setModule(decoder["module"]);
+        rawHit.setSensor(decoder["sensor"]);
+        rawHit.setSide(decoder["side"]);
+        rawHit.setStrip(decoder["strip"]);
 
         // Extract ADC values for this hit
         int hit_adcs[6] = { 
@@ -104,7 +103,7 @@ bool SvtRawDataProcessor::process(IEvent* ievent) {
             (int)rawTracker_hit->getADCValues().at(4), 
             (int)rawTracker_hit->getADCValues().at(5)
         };
-        rawHit->setADCs(hit_adcs);
+        rawHit.setADCs(hit_adcs);
 
 
         if (hasFits)
@@ -123,7 +122,7 @@ bool SvtRawDataProcessor::process(IEvent* ievent) {
                 (double)hit_fit_param->getDoubleVal(3), 
                 (double)hit_fit_param->getDoubleVal(4)
             };
-            rawHit->setFit(fit_params, 0);
+            rawHit.setFit(fit_params, 0);
             if(rawTracker_hit_fits_list.size()>1)
             {
                 hit_fit_param = static_cast<IMPL::LCGenericObjectImpl*>(rawTracker_hit_fits_list.at(1));
@@ -133,12 +132,11 @@ bool SvtRawDataProcessor::process(IEvent* ievent) {
                 fit_params[3] = (double)hit_fit_param->getDoubleVal(3); 
                 fit_params[4] = (double)hit_fit_param->getDoubleVal(4);
 
-                rawHit->setFit(fit_params, 1);
+                rawHit.setFit(fit_params, 1);
             }
 
-            rawHit->setFitN(rawTracker_hit_fits_list.size());
+            rawHit.setFitN(rawTracker_hit_fits_list.size());
         }
-        rawhits_.push_back(rawHit);
     }
 
     //Clean up

@@ -77,7 +77,7 @@ class SvtRawDataProcessor : public Processor {
         virtual void finalize();
 
     private: 
-        std::vector<RawSvtHit*> rawhits_; //!< Container to hold all TrackerHit objects.
+        std::vector<RawSvtHit> rawhits_; //!< Container to hold all TrackerHit objects.
         std::string hitCollLcio_{"SVTRawTrackerHits"}; //!< collection name
         std::string hitfitCollLcio_{"SVTFittedRawTrackerHits"}; //!< collection name
         std::string hitCollRoot_{"SVTRawTrackerHits"}; //!< collection name
