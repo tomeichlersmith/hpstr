@@ -40,9 +40,7 @@ void ECalDataProcessor::initialize(TTree* tree) {
 bool ECalDataProcessor::process(IEvent* ievent) {
 
     if(debug_ > 0) std::cout << "[ECalDataProcessor] Running Process" << std::endl;
-    for(int i = 0; i < cal_hits_.size(); i++) delete cal_hits_.at(i);
     cal_hits_.clear();
-    for(int i = 0; i < clusters_.size(); i++) delete clusters_.at(i);
     clusters_.clear();
     // Attempt to retrieve the collection "TimeCorrEcalHits" from the event. If
     // the collection doesn't exist, handle the DataNotAvailableCollection and
@@ -62,10 +60,10 @@ bool ECalDataProcessor::process(IEvent* ievent) {
     IMPL::CalorimeterHitImpl* lc_hit{nullptr}; 
 
     // Get the collection of Ecal hits from the event.
-    std::map< std::pair<int,int>, CalHit*> hit_map;
+    std::map< std::pair<int,int>, std::size_t> hit_map;
 
     // Loop through all of the hits and add them to event.
-    for (int ihit=0; ihit < hits->getNumberOfElements(); ++ihit) {
+    for (std::size_t ihit=0; ihit < hits->getNumberOfElements(); ++ihit) {
 
         // Get the ith hit from the LC Event.  
         IMPL::CalorimeterHitImpl* lc_hit 
@@ -78,24 +76,22 @@ bool ECalDataProcessor::process(IEvent* ievent) {
         // 0.1 ns resolution is sufficient to distinguish any 2 hits on the same crystal.
         int id1 = static_cast<int>(10.0*lc_hit->getTime()); 
 
-        CalHit* cal_hit = new CalHit();
+        CalHit& cal_hit{cal_hits_.emplace_back()};
 
         // Store the hit in the map for easy access later.
-        hit_map[ std::make_pair(id0,id1) ] = cal_hit;
+        hit_map[ std::make_pair(id0,id1) ] = ihit;
 
         // Set the energy of the Ecal hit
-        cal_hit->setEnergy(lc_hit->getEnergy());
+        cal_hit.setEnergy(lc_hit->getEnergy());
 
         // Set the hit time of the Ecal hit
-        cal_hit->setTime(lc_hit->getTime());
+        cal_hit.setTime(lc_hit->getTime());
 
         // Set the indices of the crystal
         int index_x = this->getIdentifierFieldValue("ix", lc_hit);
         int index_y = this->getIdentifierFieldValue("iy", lc_hit);
 
-        cal_hit->setCrystalIndices(index_x, index_y);
-        cal_hits_.push_back(cal_hit);
-
+        cal_hit.setCrystalIndices(index_x, index_y);
     }
 
     // Get the collection of Ecal clusters from the event
@@ -116,13 +112,13 @@ bool ECalDataProcessor::process(IEvent* ievent) {
         IMPL::ClusterImpl* lc_cluster = static_cast<IMPL::ClusterImpl*>(clusters->getElementAt(icluster));
 
         // Add a cluster to the event
-        CalCluster* cluster = new CalCluster();
+        CalCluster cluster;
 
         // Set the cluster position
-        cluster->setPosition(lc_cluster->getPosition());
+        cluster.setPosition(lc_cluster->getPosition());
 
         // Set the cluster energy
-        cluster->setEnergy(lc_cluster->getEnergy());
+        cluster.setEnergy(lc_cluster->getEnergy());
 
         // Get the ecal hits used to create the cluster
         EVENT::CalorimeterHitVec lc_hits = lc_cluster->getCalorimeterHits();
@@ -132,7 +128,7 @@ bool ECalDataProcessor::process(IEvent* ievent) {
         // is set to be the hit time of the seed hit.
         double senergy = 0; 
         double stime = 0; 
-        CalHit* seed_hit{nullptr}; 
+        std::size_t i_seed_hit = 0;
         for(int ihit = 0; ihit < (int) lc_hits.size(); ++ihit) {
 
             // Get an Ecal hit
@@ -145,22 +141,22 @@ bool ECalDataProcessor::process(IEvent* ievent) {
                 throw std::runtime_error("[ EcalDataProcessor ]: Hit not found in map, but is in the cluster."); 
             } else {
                 // Get the hit and add it to the cluster
-                CalHit* cal_hit = hit_map[std::make_pair(id0,id1)];
-                cluster->addHit(cal_hit);
+                std::size_t i_cal_hit = hit_map[std::make_pair(id0,id1)];
+                cluster.addHit(i_cal_hit);
 
                 if (senergy < lc_hit->getEnergy()) { 
                     senergy = lc_hit->getEnergy(); 
-                    seed_hit = cal_hit; 
-                    stime = cal_hit->getTime(); 
+                    i_seed_hit = i_cal_hit; 
+                    stime = cal_hits_.at(i_cal_hit).getTime(); 
                 } 
             }
         }
 
         // Set the time of the cluster
-        cluster->setTime(stime); 
+        cluster.setTime(stime); 
 
         // Set the cluster seed. 
-        cluster->setSeed(seed_hit); 
+        cluster.setSeed(i_seed_hit); 
         clusters_.push_back(cluster);
     }
 

@@ -16,15 +16,13 @@ CalCluster::CalCluster()
 //TODO Fix the relation between particles->CalClusters (same as tracks)
 CalCluster::~CalCluster() {
     Clear();
-    //delete hits_;   
 }
 
 
 void CalCluster::Clear(Option_t* /*option*/) {
     TObject::Clear();
-    //hits_->Delete();
-    seed_hit_ = nullptr; 
-    n_hits_ = 0;
+    seed_hit_ = 0;
+    hits_.clear();
 }
 
 void CalCluster::setPosition(const float* position) {
@@ -33,7 +31,6 @@ void CalCluster::setPosition(const float* position) {
     z_ = position[2];
 }
 
-void CalCluster::addHit(TObject* hit) { 
-    ++n_hits_;
-    hits_.Add(hit);
+void CalCluster::addHit(std::size_t i) { 
+    hits_.push_back(i);
 }

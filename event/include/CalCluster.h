@@ -38,19 +38,19 @@ class CalCluster : public TObject {
          *
          * @param hit : Cal hit composing with this cluster
          */
-        void addHit(TObject* hit); 
+        void addHit(std::size_t i); 
 
         /** 
          * @return An array of references to the calorimeter hits composing 
          * this cluster. 
          */
-        TRefArray getHits() const { return hits_; }
+        const std::vector<std::size_t>& getHits() const { return hits_; }
 
         /**
          * @return number of references to the calorimeter hits composing
          * this cluster.
          */
-        int getNHits() const { return n_hits_; }
+        std::size_t getNHits() const { return hits_.size(); }
 
         /**
          * Set the position of the calorimeter cluster.
@@ -87,23 +87,20 @@ class CalCluster : public TObject {
          *
          * @param seed The cluster seed. 
          */
-        void setSeed(TObject* seed_hit) { seed_hit_ = seed_hit; }; 
+        void setSeed(std::size_t i) { seed_hit_ = i; }; 
 
         /** @return The seed hit of the cluster. */
-        TObject* getSeed() const { return static_cast<TObject*>(seed_hit_.GetObject()); }; 
+        std::size_t getSeed() const { return seed_hit_; };
 
         ClassDef(CalCluster, 1);	
 
     private:
 
         /** An array of references to the hits associated withi this cluster. */        
-        TRefArray hits_{}; 
+        std::vector<std::size_t> hits_{};
 
         /** A reference to the seed hit of this cluster. */ 
-        TRef seed_hit_; 
-
-        /** The number of hits composing this cluster. */
-        int n_hits_{0};  
+        std::size_t seed_hit_; 
 
         /** The x position of the cluster in (mm). */
         double x_{-9999}; 

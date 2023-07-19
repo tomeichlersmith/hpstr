@@ -99,12 +99,12 @@ class ECalDataProcessor : public Processor {
         UTIL::BitFieldValue getIdentifierFieldValue(std::string field, EVENT::CalorimeterHit* hit);
 
         /** TClonesArray collection containing all ECal hits. */ 
-        std::vector<CalHit*> cal_hits_; 
+        std::vector<CalHit> cal_hits_; 
         std::string hitCollLcio_{"EcalCalHits"}; //!< description
         std::string hitCollRoot_{"RecoEcalHits"}; //!< description
 
         /** TClonesArray collection containing all ECal clusters. */
-        std::vector<CalCluster*> clusters_; 
+        std::vector<CalCluster> clusters_; 
         std::string clusCollLcio_{"EcalClustersCorr"}; //!< description
         std::string clusCollRoot_{"RecoEcalClusters"}; //!< description
 
