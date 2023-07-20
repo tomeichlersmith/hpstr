@@ -44,6 +44,7 @@ bool MCTrackerHitProcessor::process(IEvent* ievent) {
     catch (EVENT::DataNotAvailableException e) 
     {
         std::cout << e.what() << std::endl;
+        return true;
     }
 
     // Get decoders to read cellids
@@ -52,7 +53,6 @@ bool MCTrackerHitProcessor::process(IEvent* ievent) {
 
     // Loop over all of the raw SVT hits in the LCIO event and add them to the 
     // HPS event
-    for(int i = 0; i < trackerhits_.size(); i++) delete trackerhits_.at(i);
     trackerhits_.clear();
     for (int ihit = 0; ihit < lcio_trackerhits->getNumberOfElements(); ++ihit) {
 
@@ -65,32 +65,28 @@ bool MCTrackerHitProcessor::process(IEvent* ievent) {
         decoder.setValue(value);
 
         // Add a raw tracker hit to the event
-        MCTrackerHit* mc_tracker_hit = new MCTrackerHit();
+        MCTrackerHit& mc_tracker_hit{trackerhits_.emplace_back()};
 
         // Set sensitive detector identification
-        mc_tracker_hit->setLayer(decoder["layer"]);
-        mc_tracker_hit->setModule(decoder["module"]);
+        mc_tracker_hit.setLayer(decoder["layer"]);
+        mc_tracker_hit.setModule(decoder["module"]);
 
         // Set the position of the hit
         double hitPos[3];
         hitPos[0] = lcio_mcTracker_hit->getPosition()[0];
         hitPos[1] = lcio_mcTracker_hit->getPosition()[1];
         hitPos[2] = lcio_mcTracker_hit->getPosition()[2];
-        mc_tracker_hit->setPosition(hitPos);
+        mc_tracker_hit.setPosition(hitPos);
 
         // Set the energy deposit of the hit
-        mc_tracker_hit->setEdep(lcio_mcTracker_hit->getEDep());
+        mc_tracker_hit.setEdep(lcio_mcTracker_hit->getEDep());
 
         // Set the pdg of particle generating the hit
         if(lcio_mcTracker_hit->getMCParticle()) 
-            mc_tracker_hit->setPDG(lcio_mcTracker_hit->getMCParticle()->getPDG());
+            mc_tracker_hit.setPDG(lcio_mcTracker_hit->getMCParticle()->getPDG());
 
         // Set the time of the hit
-        mc_tracker_hit->setTime(lcio_mcTracker_hit->getTime());
-
-        //Push hit onto vector
-        trackerhits_.push_back(mc_tracker_hit);
-
+        mc_tracker_hit.setTime(lcio_mcTracker_hit->getTime());
     }
 
     return true;

@@ -50,6 +50,7 @@ bool MCParticleProcessor::process(IEvent* ievent) {
     catch (EVENT::DataNotAvailableException e)
     {
         std::cout << e.what() << std::endl;
+        return true;
     }
 
 

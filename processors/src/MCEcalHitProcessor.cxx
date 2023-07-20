@@ -44,6 +44,7 @@ bool MCEcalHitProcessor::process(IEvent* ievent) {
     catch (EVENT::DataNotAvailableException e) 
     {
         std::cout << e.what() << std::endl;
+        return true;
     }
 
 
@@ -53,7 +54,6 @@ bool MCEcalHitProcessor::process(IEvent* ievent) {
 
     // Loop over all of the raw SVT hits in the LCIO event and add them to the 
     // HPS event
-    for(int i = 0; i < ecalhits_.size(); i++) delete ecalhits_.at(i);
     ecalhits_.clear();
     for (int ihit = 0; ihit < lcio_ecalhits->getNumberOfElements(); ++ihit) {
 
@@ -66,25 +66,21 @@ bool MCEcalHitProcessor::process(IEvent* ievent) {
         decoder.setValue(value);
 
         // Add a mc ecal hit to the event
-        MCEcalHit* mc_ecal_hit = new MCEcalHit();
+        MCEcalHit& mc_ecal_hit{ecalhits_.emplace_back()};
 
         // Set sensitive detector identification
-        mc_ecal_hit->setSystem(decoder["system"]);
-        mc_ecal_hit->setLayer(decoder["layer"]);
-        mc_ecal_hit->setIX(decoder["ix"]);
-        mc_ecal_hit->setIY(decoder["iy"]);
+        mc_ecal_hit.setSystem(decoder["system"]);
+        mc_ecal_hit.setLayer(decoder["layer"]);
+        mc_ecal_hit.setIX(decoder["ix"]);
+        mc_ecal_hit.setIY(decoder["iy"]);
 
         // Set the position of the hit, dealing with it being a float and not double
         const float hitPosF[3] = {lcio_mcEcal_hit->getPosition()[0], lcio_mcEcal_hit->getPosition()[1], lcio_mcEcal_hit->getPosition()[2]};
         double hitPosD[3] = {(double)hitPosF[0], (double)hitPosF[1], (double)hitPosF[2]};
-        mc_ecal_hit->setPosition(hitPosD);
+        mc_ecal_hit.setPosition(hitPosD);
 
         // Set the energy deposit of the hit
-        mc_ecal_hit->setEnergy(lcio_mcEcal_hit->getEnergy());
-
-        //Push onto vector of hits
-        ecalhits_.push_back(mc_ecal_hit);
-
+        mc_ecal_hit.setEnergy(lcio_mcEcal_hit->getEnergy());
     }
 
     return true;

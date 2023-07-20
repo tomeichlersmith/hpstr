@@ -81,7 +81,7 @@ class MCTrackerHitProcessor : public Processor {
     private: 
 
         /** Containers to hold all TrackerHit objects, and collection names. */
-        std::vector<MCTrackerHit*> trackerhits_; 
+        std::vector<MCTrackerHit> trackerhits_; 
         std::string   hitCollLcio_{"TrackerHits"}; //!< description
         std::string   hitCollRoot_{"TrackerHits"}; //!< description
 

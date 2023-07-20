@@ -86,7 +86,7 @@ class MCEcalHitProcessor : public Processor {
     private: 
 
         /** Container to hold all MCEcalHit objects. */
-        std::vector<MCEcalHit*> ecalhits_; 
+        std::vector<MCEcalHit> ecalhits_; 
         std::string   hitCollLcio_{"EcalHits"}; //!< description
         std::string   hitCollRoot_{"EcalHits"}; //!< description
 
