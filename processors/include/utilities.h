@@ -150,17 +150,6 @@ namespace utils {
     /**
      * @brief description
      * 
-     * @param vtx 
-     * @param ele 
-     * @param pos 
-     * @return true 
-     * @return false 
-     */
-    bool getParticlesFromVertex(Vertex& vtx, Particle* ele, Particle* pos);
-    
-    /**
-     * @brief description
-     * 
      * \todo extern?
      */
     static UTIL::BitField64 decoder("system:6,barrel:3,layer:4,module:12,sensor:1,side:32:-2,strip:12");

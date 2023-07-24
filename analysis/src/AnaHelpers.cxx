@@ -90,24 +90,19 @@ bool AnaHelpers::MatchToGBLTracks(int ele_id, int pos_id, Track* & ele_trk, Trac
 
 //TODO clean bit up 
 bool AnaHelpers::GetParticlesFromVtx(Vertex* vtx, Particle*& ele, Particle*& pos) {
-
-
     bool foundele = false;
     bool foundpos = false;
 
-    for (int ipart = 0; ipart < vtx->getParticles().GetEntries(); ++ipart) {
-
-
-        int pdg_id = ((Particle*)vtx->getParticles().At(ipart))->getPDG();
+    for (int ipart = 0; ipart < vtx->getParticles().size(); ++ipart) {
+        int pdg_id = vtx->getParticles().at(ipart).getPDG();
         if (debug_) std::cout<<"In Loop "<<pdg_id<< " "<< ipart<<std::endl;
-
         if (pdg_id == 11) {
-            ele =  ((Particle*)vtx->getParticles().At(ipart));
+            ele =  &(vtx->getParticles().at(ipart));
             foundele=true;
             if (debug_) std::cout<<"found ele "<< (int)foundele<<std::endl;
         }
         else if (pdg_id == -11) {
-            pos = (Particle*)vtx->getParticles().At(ipart);
+            pos = &(vtx->getParticles().at(ipart));
             foundpos=true;
             if  (debug_) std::cout<<"found pos "<<(int)foundpos<<std::endl;
 

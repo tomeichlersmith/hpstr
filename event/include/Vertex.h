@@ -16,6 +16,8 @@
 #include <TRef.h>
 #include <TVector3.h>
 
+#include "Particle.h"
+
 //TODO make float/doubles accordingly.
 
 class Vertex : public TObject {
@@ -37,7 +39,7 @@ class Vertex : public TObject {
          * @param: A Track object
          */
 
-        void addParticle(TObject* part);
+        void addParticle(const Particle& p);
 
         //TODO unify
         /** Set the chi2 */
@@ -83,7 +85,7 @@ class Vertex : public TObject {
         /** Set the probability */
         void setProbability(const float probability) {probability_ = probability;}
 
-        TRefArray getParticles(){return parts_;}; 
+        std::vector<Particle> getParticles(){return parts_;}; 
 
         /** Returns the covariance matrix as a simple vector of values */
         const std::vector<float>& getCovariance() const {return covariance_;}
@@ -162,8 +164,7 @@ class Vertex : public TObject {
         float probability_{-999};
         int id_;
         std::string type_{""};
-        TRefArray parts_;
-        int n_parts_{0};
+        std::vector<Particle> parts_;
         std::vector<float> parameters_;
 
 }; // Vertex

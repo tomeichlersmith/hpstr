@@ -28,6 +28,8 @@ class TTree;
 struct iDMCandidateEvent {
   int ievent;
   Vertex vtx;
+  Particle ele;
+  Particle pos;
 
   void attach(TTree* t);
   void clear();
@@ -79,6 +81,8 @@ class iDMPreSelection : public Processor {
 
     int isData_;
     int debug_{0}; //!< Debug Level
+
+    double timeOffset_;
 };
 
 void iDMPreSelection::configure(const ParameterSet& parameters) {
@@ -93,6 +97,7 @@ void iDMPreSelection::configure(const ParameterSet& parameters) {
   isData_  = parameters.getInteger("isData",isData_);
   analysis_        = parameters.getString("analysis");
   selectionCfg_   = parameters.getString("vtxSelectionjson",selectionCfg_);
+  timeOffset_ = parameters.getDouble("CalTimeOffset",timeOffset_);
 }
 
 template <typename T>
@@ -152,14 +157,173 @@ bool iDMPreSelection::process(IEvent* ievent) {
 
   // double check that we have the right trigger
   // this handles the data mixin where other triggers are kept alongside pair1
-  if (!vtxSelector->passCutEq("Pair1_eq",(int)evth_->isPair1Trigger(),weight))
+  int isPair1Trigger = isData_ ? evth_->isPair1Trigger() : 1;
+  if (!vtxSelector->passCutEq("Pair1_eq",isPair1Trigger,weight))
     return true;
 
   // require that we only have one candidate vertex in an event
-  if (!vtxSelector->passCutEq("nVtxs_eq", vtxs_.size(), weight))
+  // we separate this into a lt and gt requirement so we can see
+  // how many events have no vertices and how many have more than one
+  if (!vtxSelector->passCutGt("nVtx_gt", vtxs_.size(), weight))
+    return true;
+  if (!vtxSelector->passCutEq("nVtx_lt", vtxs_.size(), weight))
     return true;
 
   event_.vtx = vtxs_.at(0);
+  bool found_ele{false}, found_pos{false};
+  for (std::size_t ipart{0}; ipart < event_.vtx.getParticles().size(); ++ipart) {
+    Particle& p{event_.vtx.getParticles()[ipart]};
+    if (p.getPDG() == +11) {
+      event_.ele = p;
+      found_ele = true;
+    } else if (p.getPDG() == -11) {
+      event_.pos = p;
+      found_pos = true;
+    }
+  }
+  if (not found_ele) {
+    throw std::runtime_error("Unable to find electron part of vertex.");
+  }
+  if (not found_pos) {
+    throw std::runtime_error("Unable to find positron part of vertex.");
+  }
+
+  Track ele_trk{event_.ele.getTrack()},
+        pos_trk{event_.pos.getTrack()};
+
+  //Ele Track Time
+  if (!vtxSelector->passCutLt("eleTrkTime_lt",fabs(ele_trk.getTrackTime()),weight))
+    return true;
+
+  //Pos Track Time
+  if (!vtxSelector->passCutLt("posTrkTime_lt",fabs(pos_trk.getTrackTime()),weight))
+    return true;
+
+  //Ele Track-cluster match
+  if (!vtxSelector->passCutLt("eleTrkCluMatch_lt",event_.ele.getGoodnessOfPID(),weight))
+    return true;
+
+  //Pos Track-cluster match
+  if (!vtxSelector->passCutLt("posTrkCluMatch_lt",event_.pos.getGoodnessOfPID(),weight))
+    return true;
+
+  //Require Positron Cluster exists
+  if (!vtxSelector->passCutGt("posClusE_gt",event_.ele.getCluster().getEnergy(),weight))
+    return true;
+
+  //Require Positron Cluster does NOT exists
+  if (!vtxSelector->passCutLt("posClusE_lt",event_.pos.getCluster().getEnergy(),weight))
+    return true;
+
+  double botClusTime = 0.0;
+  if(event_.ele.getCluster().getPosition().at(1) < 0.0) 
+    botClusTime = event_.ele.getCluster().getTime();
+  else 
+    botClusTime = event_.pos.getCluster().getTime();
+
+  //Bottom Cluster Time
+  if (!vtxSelector->passCutLt("botCluTime_lt", botClusTime, weight))
+    return true;
+  if (!vtxSelector->passCutGt("botCluTime_gt", botClusTime, weight))
+    return true;
+
+  double corr_eleClusterTime = event_.ele.getCluster().getTime() - timeOffset_;
+  double corr_posClusterTime = event_.pos.getCluster().getTime() - timeOffset_;
+  //Ele Pos Cluster Time Difference
+  if (!vtxSelector->passCutLt("eleposCluTimeDiff_lt",fabs(corr_eleClusterTime - corr_posClusterTime),weight))
+    return true;
+
+  //Ele Track-Cluster Time Difference
+  if (!vtxSelector->passCutLt("eleTrkCluTimeDiff_lt",fabs(ele_trk.getTrackTime() - corr_eleClusterTime),weight))
+    return true;
+
+  //Pos Track-Cluster Time Difference
+  if (!vtxSelector->passCutLt("posTrkCluTimeDiff_lt",fabs(pos_trk.getTrackTime() - corr_posClusterTime),weight))
+    return true;
+
+  //Ele Track Quality - Chi2
+  if (!vtxSelector->passCutLt("eleTrkChi2_lt",ele_trk.getChi2(),weight))
+    return true;
+
+  //Pos Track Quality - Chi2
+  if (!vtxSelector->passCutLt("posTrkChi2_lt",pos_trk.getChi2(),weight))
+    return true;
+
+  //Ele Track Quality - Chi2Ndf
+  if (!vtxSelector->passCutLt("eleTrkChi2Ndf_lt",ele_trk.getChi2Ndf(),weight))
+    return true;
+
+  //Pos Track Quality - Chi2Ndf
+  if (!vtxSelector->passCutLt("posTrkChi2Ndf_lt",pos_trk.getChi2Ndf(),weight))
+    return true;
+
+  TVector3 ele_mom;
+  //ele_mom.SetX(ele.getMomentum()[0]);
+  //ele_mom.SetY(ele.getMomentum()[1]);
+  //ele_mom.SetZ(ele.getMomentum()[2]);
+  ele_mom.SetX(ele_trk.getMomentum()[0]);
+  ele_mom.SetY(ele_trk.getMomentum()[1]);
+  ele_mom.SetZ(ele_trk.getMomentum()[2]);
+
+  TVector3 pos_mom;
+  //pos_mom.SetX(pos.getMomentum()[0]);
+  //pos_mom.SetY(pos.getMomentum()[1]);
+  //pos_mom.SetZ(pos.getMomentum()[2]);
+  pos_mom.SetX(pos_trk.getMomentum()[0]);
+  pos_mom.SetY(pos_trk.getMomentum()[1]);
+  pos_mom.SetZ(pos_trk.getMomentum()[2]);
+
+  //Beam Electron cut
+  if (!vtxSelector->passCutLt("eleMom_lt",ele_mom.Mag(),weight))
+    return true;
+
+  //Ele min momentum cut
+  if (!vtxSelector->passCutGt("eleMom_gt",ele_mom.Mag(),weight))
+    return true;
+
+  //Pos min momentum cut
+  if (!vtxSelector->passCutGt("posMom_gt",pos_mom.Mag(),weight))
+    return true;
+
+  //Ele nHits
+  int ele2dHits = ele_trk.getTrackerHitCount();
+  if (!ele_trk.isKalmanTrack())
+      ele2dHits*=2;
+
+  if (!vtxSelector->passCutGt("eleN2Dhits_gt",ele2dHits,weight))  {
+    return true;
+  }
+
+  //Pos nHits
+  int pos2dHits = pos_trk.getTrackerHitCount();
+  if (!pos_trk.isKalmanTrack())
+      pos2dHits*=2;
+
+  if (!vtxSelector->passCutGt("posN2Dhits_gt",pos2dHits,weight))  {
+    return true;
+  }
+
+  //Less than 4 shared hits for ele/pos track
+  if (!vtxSelector->passCutLt("eleNshared_lt",ele_trk.getNShared(),weight)) {
+    return true;
+  }
+
+  if (!vtxSelector->passCutLt("posNshared_lt",pos_trk.getNShared(),weight)) {
+    return true;
+  }
+
+
+  //Vertex Quality
+  if (!vtxSelector->passCutLt("chi2unc_lt",event_.vtx.getChi2(),weight))
+    return true;
+
+  //Max vtx momentum
+  if (!vtxSelector->passCutLt("maxVtxMom_lt",(ele_mom+pos_mom).Mag(),weight))
+    return true;
+
+  //Min vtx momentum
+  if (!vtxSelector->passCutGt("minVtxMom_gt",(ele_mom+pos_mom).Mag(),weight))
+    return true;
 
   ana_tree_->Fill();
   return true;
