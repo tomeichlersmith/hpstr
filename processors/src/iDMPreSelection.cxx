@@ -170,26 +170,10 @@ bool iDMPreSelection::process(IEvent* ievent) {
     return true;
 
   event_.vtx = vtxs_.at(0);
-  bool found_ele{false}, found_pos{false};
-  for (std::size_t ipart{0}; ipart < event_.vtx.getParticles().size(); ++ipart) {
-    Particle& p{event_.vtx.getParticles()[ipart]};
-    if (p.getPDG() == +11) {
-      event_.ele = p;
-      found_ele = true;
-    } else if (p.getPDG() == -11) {
-      event_.pos = p;
-      found_pos = true;
-    }
-  }
-  if (not found_ele) {
-    throw std::runtime_error("Unable to find electron part of vertex.");
-  }
-  if (not found_pos) {
-    throw std::runtime_error("Unable to find positron part of vertex.");
-  }
-
-  Track ele_trk{event_.ele.getTrack()},
-        pos_trk{event_.pos.getTrack()};
+  event_.ele = event_.vtx.getElectron();
+  event_.pos = event_.vtx.getPositron();
+  Track ele_trk{event_.vtx.getElectron().getTrack()},
+        pos_trk{event_.vtx.getPositron().getTrack()};
 
   //Ele Track Time
   if (!vtxSelector->passCutLt("eleTrkTime_lt",fabs(ele_trk.getTrackTime()),weight))

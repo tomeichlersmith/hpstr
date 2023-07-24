@@ -27,7 +27,10 @@ void Vertex::Clear(Option_t *option) {
 
 void Vertex::addParticle(const Particle& p)
 { 
-    parts_.emplace_back(p);
+  if (p.getPDG() == +11)
+    electron_ = p;
+  else if (p.getPDG() == -11)
+    positron_ = p;
 }
 
 void Vertex::setCovariance( const std::vector<float>& vec){ 

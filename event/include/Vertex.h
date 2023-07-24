@@ -85,7 +85,8 @@ class Vertex : public TObject {
         /** Set the probability */
         void setProbability(const float probability) {probability_ = probability;}
 
-        std::vector<Particle> getParticles(){return parts_;}; 
+        const Particle& getElectron() const { return electron_; }
+        const Particle& getPositron() const { return positron_; }
 
         /** Returns the covariance matrix as a simple vector of values */
         const std::vector<float>& getCovariance() const {return covariance_;}
@@ -164,7 +165,8 @@ class Vertex : public TObject {
         float probability_{-999};
         int id_;
         std::string type_{""};
-        std::vector<Particle> parts_;
+        Particle electron_;
+        Particle positron_;
         std::vector<float> parameters_;
 
 }; // Vertex

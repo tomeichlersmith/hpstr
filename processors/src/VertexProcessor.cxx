@@ -35,14 +35,12 @@ void VertexProcessor::configure(const ParameterSet& parameters) {
 void VertexProcessor::initialize(TTree* tree) {
     // Add branches to tree
     tree->Branch(vtxCollRoot_.c_str(),  &vtxs_);
-    tree->Branch(partCollRoot_.c_str(), &parts_);
 }
 
 bool VertexProcessor::process(IEvent* ievent) {
 
     if (debug_ > 0) std::cout << "VertexProcessor: Clear output vector" << std::endl;
     vtxs_.clear();
-    parts_.clear();
 
     Event* event = static_cast<Event*> (ievent);
 
@@ -97,7 +95,7 @@ bool VertexProcessor::process(IEvent* ievent) {
         for(auto lc_part : lc_parts)
         {
            if (debug_ > 0) std::cout << "VertexProcessor: Build particle" << std::endl;
-           Particle& part = parts_.emplace_back(utils::buildParticle(lc_part, gbl_kink_data, track_data));
+           Particle part{utils::buildParticle(lc_part, gbl_kink_data, track_data)};
            if (debug_ > 0) std::cout << "VertexProcessor: Add particle" << std::endl;
            vtx.addParticle(part);
         }
