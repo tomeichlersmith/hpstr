@@ -62,8 +62,7 @@ class iDMPreSelection : public Processor {
 
     TTree *ana_tree_;
     iDMCandidateEvent event_;
-    EventHeader evth_{}; //!< description
-    TSData ts_{}; //!< description
+    EventHeader *evth_{}; //!< description
     std::vector<CalCluster> ecal_{}; //!< description
     std::vector<Vertex> vtxs_{}; //!< description
     std::vector<Track> trks_{}; //!< description
@@ -72,7 +71,6 @@ class iDMPreSelection : public Processor {
 
     std::string anaName_{"vtxAna"}; //!< description
     std::string analysis_;
-    std::string tsColl_{"TSBank"}; //!< description
     std::string vtxColl_{"Vertices"}; //!< description
     std::string hitColl_{"RotatedHelicalTrackHits"}; //!< description
     std::string trkColl_{"GBLTracks"}; //!< description
@@ -87,7 +85,6 @@ void iDMPreSelection::configure(const ParameterSet& parameters) {
   std::cout << "Configuring iDMPreSelection" << std::endl;
   debug_       = parameters.getInteger("debug");
   anaName_ = parameters.getString("anaName",anaName_);
-  tsColl_  = parameters.getString("tsColl",tsColl_);
   vtxColl_ = parameters.getString("vtxColl",vtxColl_);
   trkColl_ = parameters.getString("trkColl",trkColl_);
   hitColl_ = parameters.getString("hitColl",hitColl_);
@@ -125,10 +122,7 @@ void iDMPreSelection::initialize(TTree* tree) {
     branches.insert(br->GetName());
     if (debug_) std::cout << br->GetName() << std::endl;
   }
-  set_and_check(tree, "EventHeader", evth_);
-  if (branches.find(tsColl_) != branches.end()) {
-    set_and_check(tree, tsColl_, ts_);
-  }
+  tree->SetBranchAddress("EventHeader", &evth_);
   set_and_check(tree, vtxColl_, vtxs_);
   if (branches.find(hitColl_) != branches.end()) {
     set_and_check(tree, hitColl_, hits_);
@@ -146,11 +140,11 @@ void iDMPreSelection::initialize(TTree* tree) {
 
 bool iDMPreSelection::process(IEvent* ievent) {
   event_.clear();
-  event_.ievent = evth_.getEventNumber();
+  event_.ievent = evth_->getEventNumber();
 
   if(debug_) {
     std:: cout << "----------------- Event " 
-      << evth_.getEventNumber() << " -----------------" << std::endl;
+      << evth_->getEventNumber() << " -----------------" << std::endl;
   }
   HpsEvent* hps_evt = (HpsEvent*) ievent;
   double weight = 1.;
@@ -158,7 +152,7 @@ bool iDMPreSelection::process(IEvent* ievent) {
 
   // double check that we have the right trigger
   // this handles the data mixin where other triggers are kept alongside pair1
-  if (!vtxSelector->passCutEq("Pair1_eq",(int)evth_.isPair1Trigger(),weight))
+  if (!vtxSelector->passCutEq("Pair1_eq",(int)evth_->isPair1Trigger(),weight))
     return true;
 
   // require that we only have one candidate vertex in an event
