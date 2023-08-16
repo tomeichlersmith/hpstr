@@ -46,6 +46,8 @@ cvtx = HpstrConf.Processor('cvtx', 'VertexProcessor')
 vtxgbl = HpstrConf.Processor('vtxgbl', 'VertexProcessor')
 cvtxgbl = HpstrConf.Processor('cvtxgbl', 'VertexProcessor')
 mcpart = HpstrConf.Processor('mcpart', 'MCParticleProcessor')
+mcthits = HpstrConf.Processor('mcthits', 'MCTrackerHitProcessor')
+mcehits = HpstrConf.Processor('mcehits', 'MCEcalHitProcessor')
 
 ###############################
 #   Processor Configuration   #
@@ -162,6 +164,11 @@ mcpart.parameters["debug"] = 0
 mcpart.parameters["mcPartCollLcio"] = 'MCParticle'
 mcpart.parameters["mcPartCollRoot"] = 'MCParticle'
 
+#MCTrackerHits
+mcthits.parameters["debug"] = 0
+mcthits.parameters["hitCollLcio"] = 'TrackerHits'
+mcthits.parameters["hitCollRoot"] = 'TrackerHits'
+
 if (options.tracking == "KF"):
     sequence = [header, vtx, ecal, track]
     # Get KF svt truth hits
@@ -186,7 +193,7 @@ if (options.rawHits > 0):
     sequence.append(rawsvt)
 # If MC, get MCParticles
 if (not options.isData):
-    sequence.append(mcpart)
+    sequence.extend([mcpart, mcthits])
 
 p.sequence = sequence
 
